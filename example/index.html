@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Cloud Input Test</title>
+  </head>
+  <body>
+    <p>
+      Input:
+      <input type="text" />
+      <input type="text" />
+      <input type="text" />
+    </p>
+    <p>
+      Textarea:
+      <textarea rows="10" cols="30"></textarea>
+      <textarea rows="10" cols="30"></textarea>
+    </p>
+    <p>
+      ContentEditable:
+      <div contenteditable="true" style="width: 200px; height: 200px;border: 1px solid #ccc; display: inline-block;"></div>
+      <div contenteditable="true" style="width: 200px; height: 200px;border: 1px solid #ccc; display: inline-block;"></div>
+    </p>
+
+    <p>
+      Iframe
+      <iframe></iframe>
+      <iframe></iframe>
+    </p>
+  </body>
+  <script>
+    const frames = document.getElementsByTagName("iframe")
+    for (let i = 0; i < frames.length; i++) {
+      frames[i].contentDocument.designMode = "on";
+    }
+  </script>
+    <!-- ime engine -->
+    <!-- <script type="module" src="./main.js"></script> -->
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "cloudinput",
+  "version": "1.0.0",
+  "description": "An browser plugin to use Chinese Pinyin Input Method.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite example",
+    "build:ime": "vite build"
+  },
+  "author": "nieyuyao",
+  "license": "MIT",
+  "dependencies": {
+    "dawg-lookup": "^2.2.1",
+    "jquery": "^3.7.1",
+    "lodash": "^4.17.21",
+    "lodash-es": "^4.17.21"
+  },
+  "devDependencies": {
+    "vite": "^6.0.7"
+  }
+}
