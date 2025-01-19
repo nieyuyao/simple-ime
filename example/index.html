@@ -3,11 +3,14 @@
   <head>
     <meta charset="utf-8" />
     <title>Cloud Input Test</title>
+    <script>
+      window.setInterval = () => {}
+    </script>
   </head>
   <body>
     <p>
       Input:
-      <input type="text" />
+      <input type="text" id="input1"/>
       <input type="text" />
       <input type="text" />
     </p>
@@ -25,7 +28,7 @@
     <p>
       Iframe
       <iframe></iframe>
-      <iframe></iframe>
+      <!-- <iframe></iframe> -->
     </p>
   </body>
   <script>
@@ -33,7 +36,17 @@
     for (let i = 0; i < frames.length; i++) {
       frames[i].contentDocument.designMode = "on";
     }
+
+    setTimeout(() => {
+      const iframe = document.createElement('iframe')
+      document.body.append(iframe)
+      iframe.contentDocument.designMode = "on";
+    }, 10000)
+
+    document.getElementById('input1').addEventListener('input', (event) => {
+      console.log(event.target.value)
+    })
   </script>
     <!-- ime engine -->
-    <!-- <script type="module" src="./main.js"></script> -->
+    <script type="module" src="./main.js"></script>
 </html>

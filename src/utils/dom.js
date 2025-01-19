@@ -1,5 +1,4 @@
 export const isEditableElement = (element) => {
-  console.log(element)
   if (element.readOnly) {
     return false
   }
@@ -8,11 +7,8 @@ export const isEditableElement = (element) => {
       return true
     case 'INPUT':
       return element.type.toUpperCase() == 'TEXT' || element.type.toUpperCase() == 'SEARCH'
-    case 'DIV':
-      return element.isContentEditable
     case 'IFRAME':
       try {
-        console.log(element)
         var ifdoc = i18n.input.common.dom.getSameDomainFrameDoc(element)
         return (
           !!ifdoc &&
@@ -22,9 +18,9 @@ export const isEditableElement = (element) => {
       } catch (e) {
         return false
       }
+    default:
+      return element.isContentEditable
   }
-
-  return false
 }
 
 const insertContentIntoEditable = (content) => {

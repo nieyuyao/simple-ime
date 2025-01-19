@@ -1,48 +1,67 @@
-import { flatten } from 'lodash-es';
-import { dict, packedTrie } from './google_pinyin_dict_utf8_55320';
-import { PTrie } from 'dawg-lookup';
+import { flatten } from 'lodash-es'
+import { dict, packedTrie } from './dict/google_pinyin_dict_utf8_55320'
+import { PTrie } from 'dawg-lookup'
 
+const trie = new PTrie(packedTrie)
 
-const typedDict = dict;
-
-const trie = new PTrie(packedTrie);
-const getCandidates = (input) => {
+/**
+ * @param {string} input
+ * @returns
+ */
+export const getCandidates = (input) => {
   let list = []
-
   if (input) {
-    const value = typedDict[input];
+    const value = dict[input]
+    // Best Candidate
     if (value) {
       // full pinyin match, or abbr match.
       list = value.map((item) => {
         return {
           ...item,
-          matchLen: input.length
+          matchLen: input.length,
         }
-      }) 
+      })
     } else if (input.length >= 1) {
       const completions = trie.completions(input)
       const tempList = completions.map((key) => {
-        return typedDict[key] ? typedDict[key].map((item => {
-          return {
-            ...item,
-            matchLen: key.length
-          }
-        })) : undefined
+        return dict[key]
+          ? dict[key].map((item) => {
+              return {
+                ...item,
+                matchLen: key.length,
+              }
+            })
+          : undefined
       })
       // pinyin prefix match, using prepared packed trie data.
-      list = flatten(tempList);
+      list = flatten(tempList)
+    }
+
+    if (list.length <= 0 && input.length >= 1) {
+      for (let i = input.length - 1; i >= 1; i--) {
+        let subInput = input.substring(0, i)
+        if (dict[subInput]) {
+          subInput = subInput.substring(0, i)
+          const value = dict[subInput]
+          if (value) {
+            list = value.map((item) => {
+              return {
+                ...item,
+                matchLen: subInput.length,
+              }
+            })
+          }
+          break
+        }
+      }
     }
 
     //sort candidates by word frequency
-    list = list
-      .filter((item) => !!item)
-      .sort((a, b) => b.f - a.f)
+    list = list.filter((item) => !!item).sort((a, b) => b.f - a.f)
   }
 
-  const candidates = list.map((item) => item.w);
-  const matchLens = list.map((item) => item.matchLen);
+  const candidates = list.map((item) => item.w)
+  const matchLens = list.map((item) => item.matchLen)
 
-  return [candidates, matchLens];
-};
-
-export default getCandidates;
+  return [candidates, matchLens]
+}
