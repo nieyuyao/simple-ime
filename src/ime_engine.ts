@@ -1,5 +1,5 @@
 import { flatten } from 'lodash-es'
-import { dict, packedTrie } from './dict/google_pinyin_dict_utf8_55320'
+import { type Candidate, dict, packedTrie } from './data/google_pinyin_dict_utf8_55320'
 import { PTrie } from 'dawg-lookup'
 
 const trie = new PTrie(packedTrie)
@@ -8,8 +8,8 @@ const trie = new PTrie(packedTrie)
  * @param {string} input
  * @returns
  */
-export const getCandidates = (input) => {
-  let list = []
+export const getCandidates = (input: string): [string[], number[]] => {
+  let list: (Candidate & { matchLen: number})[] = []
   if (input) {
     const value = dict[input]
     // Best Candidate
@@ -56,7 +56,7 @@ export const getCandidates = (input) => {
       }
     }
 
-    //sort candidates by word frequency
+    // sort candidates by word frequency
     list = list.filter((item) => !!item).sort((a, b) => b.f - a.f)
   }
 

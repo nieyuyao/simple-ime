@@ -42,11 +42,16 @@
       document.body.append(iframe)
       iframe.contentDocument.designMode = "on";
     }, 10000)
-
-    document.getElementById('input1').addEventListener('input', (event) => {
-      console.log(event.target.value)
+    document.getElementById('input1').addEventListener('compositionstart', (event) => {
+      console.log(event, '=====compositionstart===')
+    })
+    document.getElementById('input1').addEventListener('compositionupdate', (event) => {
+      console.log(event, '=====compositionupdate===')
+    })
+    document.getElementById('input1').addEventListener('compositionend', (event) => {
+      console.log(event, '====compositionend===')
     })
   </script>
     <!-- ime engine -->
-    <script type="module" src="./main.js"></script>
+    <script type="module" src="./main.ts"></script>
 </html>

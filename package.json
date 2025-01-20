@@ -16,6 +16,7 @@
     "lodash-es": "^4.17.21"
   },
   "devDependencies": {
+    "typescript": "^5.7.3",
     "vite": "^6.0.7"
   }
 }

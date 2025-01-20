@@ -8,16 +8,7 @@ export const isEditableElement = (element) => {
     case 'INPUT':
       return element.type.toUpperCase() == 'TEXT' || element.type.toUpperCase() == 'SEARCH'
     case 'IFRAME':
-      try {
-        var ifdoc = i18n.input.common.dom.getSameDomainFrameDoc(element)
-        return (
-          !!ifdoc &&
-          ((ifdoc.designMode && ifdoc.designMode.toUpperCase() == 'ON') ||
-            (ifdoc.body && ifdoc.body.isContentEditable))
-        )
-      } catch (e) {
-        return false
-      }
+      return false
     default:
       return element.isContentEditable
   }
@@ -48,21 +39,22 @@ const insertContentIntoEditable = (content) => {
 }
 
 
-export const updateContent = (element, str) => {
+export const updateContent = (element: HTMLElement, str: string) => {
   let content = ''
   switch (element.tagName.toUpperCase()) {
     case 'TEXTAREA':
     case 'INPUT':
-      const insertPos = element.selectionStart
-      content = element.value
+      let input = element as HTMLInputElement
+      const insertPos = input.selectionStart || 0
+      content = input.value
       if (!content) {
-        element.value += str
+        input.value += str
       } else {
         const front = content.substring(0, insertPos)
         const behind = content.substring(insertPos)
-        element.value = front + str + behind
+        input.value = front + str + behind
       }
-      element.setSelectionRange(insertPos + str.length, insertPos + str.length)
+      input.setSelectionRange(insertPos + str.length, insertPos + str.length)
       break
     case 'DIV':
       insertContentIntoEditable(str)
