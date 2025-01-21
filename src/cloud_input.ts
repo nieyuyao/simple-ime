@@ -1,4 +1,4 @@
-import $ from 'jquery'
+import $  from 'jquery'
 import { getCandidates } from './ime_engine'
 import ban50Png from './img/ban50.png?inline'
 import pin50Png from './img/pin50.png?inline'
@@ -17,9 +17,9 @@ class CloudInputObj {
 
   candIndex = 0
 
-  cands: any[] = []
+  cands: string[] = []
 
-  candsRsp: any[] = []
+  candsRsp: number[] = []
 
   chiMode = true
 
@@ -27,7 +27,7 @@ class CloudInputObj {
 
   method = 1
 
-  newIn: any =  $(document.activeElement)
+  newIn: JQuery<Element> = $(document.body)
 
   punct = 0
 
@@ -83,7 +83,7 @@ class CloudInputObj {
   }
 
   bindEvents() {
-    $('.cloud_input_cnd').mousedown(function (e) {
+    $('.cloud_input_cnd').mousedown((e) => {
       e.preventDefault()
       const index = $('.cloud_input_cnd').index(e.target)
       this.selectCandidate(index + 1)
@@ -92,39 +92,39 @@ class CloudInputObj {
   
     $('.cloud_input_drct')
       .eq(0)
-      .mousedown(function (e) {
+      .mousedown((e) => {
         e.preventDefault()
         this.candidatePageUp()
       })
   
     $('.cloud_input_drct')
       .eq(1)
-      .mousedown(function (e) {
+      .mousedown((e) => {
         e.preventDefault()
         this.candidatePageDown()
       })
   
-    $('#cloud_input_error #cloud_input_predict').mousedown(function (e) {
+    $('#cloud_input_error #cloud_input_predict').mousedown((e) => {
       e.preventDefault()
     })
   
     $('#cloud_input_status img')
       .eq(0)
-      .click(function (e) {
+      .click((e) => {
         e.preventDefault()
         this.switchMethod(e.target)
       })
   
     $('#cloud_input_status img')
       .eq(1)
-      .click(function (e) {
+      .click((e) => {
         e.preventDefault()
         this.switchShape(e.target)
       })
   
     $('#cloud_input_status img')
       .eq(2)
-      .click(function (e) {
+      .click((e) => {
         e.preventDefault()
         this.switchPunct(e.target)
       })
@@ -138,12 +138,15 @@ class CloudInputObj {
       'focusin',
       () => {
         const activeElement = document.activeElement
-        if (isEditableElement(activeElement)) {
+        if (activeElement && isEditableElement(activeElement)) {
           this.flag = false
           this.newIn = $(activeElement)
+          const top = this.newIn.offset()?.top ?? 0
+          const left = this.newIn.offset()?.left ?? 0
+          const height = this.newIn.height() ?? 0
           $('#cloud_input_composition').css({
-            top: this.newIn.offset().top + this.newIn.height() + 'px',
-            left: this.newIn.offset().left + 'px',
+            top: top + height + 'px',
+            left: left + 'px',
           })
           this.setPredictText( '')
           this.hideComposition()
@@ -161,7 +164,6 @@ class CloudInputObj {
           this.setPredictText('')
           this.hideComposition()
           this.clearCandidate()
-          this.newIn = null
         }
       },
       { capture: true }
@@ -337,9 +339,8 @@ class CloudInputObj {
     // TODO: support cursor position/selection range
     // TODO: fetch from remote server
     const str = this.getPredictText()
-    const element = this.newIn[0]
-    updateContent(element, str)
-    dispatchInputEvent(element, 'input')
+    updateContent(this.newIn[0], str)
+    dispatchInputEvent(this.newIn[0], 'input')
     this.originPinyin = ''
     this.toConvertPinyin = ''
     this.setPredictText('')
@@ -415,9 +416,12 @@ class CloudInputObj {
   init() {
     this.addCSSandHTML()
     this.bindEvents()
+    const top = this.newIn.offset()?.top ?? 0
+    const left = this.newIn.offset()?.left ?? 0
+    const height = this.newIn.height() ?? 0
     $('#cloud_input_composition').css({
-      top: this.newIn.offset().top + this.newIn.height() + 'px',
-      left: this.newIn.offset().left + 'px',
+      top: top + height + 'px',
+      left: left + 'px',
     })
   }
 
@@ -464,7 +468,7 @@ class CloudInputObj {
     this.cands = candidates
   }
 
-  setMatchLens(match_lens: any[]) {
+  setMatchLens(match_lens: number[]) {
     this.candsRsp = match_lens
   }
 

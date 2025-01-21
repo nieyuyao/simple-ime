@@ -16,6 +16,7 @@
     "lodash-es": "^4.17.21"
   },
   "devDependencies": {
+    "@types/jquery": "^3.5.32",
     "typescript": "^5.7.3",
     "vite": "^6.0.7"
   }

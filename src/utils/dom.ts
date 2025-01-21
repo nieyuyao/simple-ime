@@ -39,7 +39,7 @@ const insertContentIntoEditable = (content) => {
 }
 
 
-export const updateContent = (element: HTMLElement, str: string) => {
+export const updateContent = (element: Element, str: string) => {
   let content = ''
   switch (element.tagName.toUpperCase()) {
     case 'TEXTAREA':
