@@ -1,16 +1,16 @@
 <script lang="ts" setup>
-const onInput = (e) => {
+function onInput(e) {
   console.log(e, '====input===')
 }
-const onCompositionStart = (e) => {
+function onCompositionStart(e) {
   console.log(e.data, '====compositionstart===')
 }
 
-const onCompositionUpdate = (e) => {
+function onCompositionUpdate(e) {
   console.log(e.data, '====compositionupdate===')
 }
 
-const onCompositionEnd = (e) => {
+function onCompositionEnd(e) {
   console.log(e.data, '====compositionend===')
 }
 </script>
@@ -22,5 +22,5 @@ const onCompositionEnd = (e) => {
     @compositionstart="onCompositionStart"
     @compositionupdate="onCompositionUpdate"
     @compositionend="onCompositionEnd"
-  />
+  >
 </template>
