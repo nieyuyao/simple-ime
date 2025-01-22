@@ -4,6 +4,7 @@ import { getCandidates } from './ime-engine'
 import CloudInputCss from './styles/index.scss?inline'
 import { isEditableElement, updateContent } from './utils/dom'
 import { dispatchCompositionEvent, dispatchInputEvent } from './utils/event'
+import { createInputView } from './views/create-input-view'
 import { createToolbar } from './views/create-toolbar'
 
 export class SimpleIme {
@@ -40,62 +41,28 @@ export class SimpleIme {
   toolbarHandle: ReturnType<typeof createToolbar>
 
   addCSSandHTML() {
-    $(`
-      <div id="cloud_input_composition">
-        <table>
-          <tr>
-            <td id="cloud_input_predict" colspan="7"></td>
-          </tr>
-          <tr>
-            <td
-              colspan="7"
-              style="
-                box-shadow: rgba(66, 140, 240, 0.5) 0px -1px 1px;
-                -webkit-box-shadow: rgba(66, 140, 240, 0.5) 0px -1px 1px;
-              "
-            ></td>
-          </tr>
-          <tr>
-            <td class="cloud_input_cnd"></td>
-            <td class="cloud_input_cnd"></td>
-            <td class="cloud_input_cnd"></td>
-            <td class="cloud_input_cnd"></td>
-            <td class="cloud_input_cnd"></td>
-            <td class="cloud_input_drct">&larr;</td>
-            <td class="cloud_input_drct">&rarr;</td>
-          </tr>
-          <td id="cloud_input_error" colspan="7" style="color: red"></td>
-        </table>
-      </div>
-      `).appendTo('body')
     $(`<style type='text/css'>${CloudInputCss}</style>`).appendTo('head')
   }
 
   bindEvents() {
-    $('.cloud_input_cnd').mousedown((e) => {
+    $('.sime-cnd').mousedown((e) => {
       e.preventDefault()
-      const index = $('.cloud_input_cnd').index(e.target)
+      const index = $('.sime-cnd').index(e.target)
       this.selectCandidate(index + 1)
       this.flag = true
     })
 
-    $('.cloud_input_drct')
-      .eq(0)
+    $('.sime-prev-cand-button')
       .mousedown((e) => {
         e.preventDefault()
         this.candidatePageUp()
       })
 
-    $('.cloud_input_drct')
-      .eq(1)
+    $('.sime-next-cand-button')
       .mousedown((e) => {
         e.preventDefault()
         this.candidatePageDown()
       })
-
-    $('#cloud_input_error #cloud_input_predict').mousedown((e) => {
-      e.preventDefault()
-    })
 
     this.bindFocusEvent()
     this.bindKeyEvent()
@@ -112,7 +79,7 @@ export class SimpleIme {
           const top = this.newIn.offset()?.top ?? 0
           const left = this.newIn.offset()?.left ?? 0
           const height = this.newIn.height() ?? 0
-          $('#cloud_input_composition').css({
+          $('#sime-composition').css({
             top: `${top + height}px`,
             left: `${left}px`,
           })
@@ -285,25 +252,25 @@ export class SimpleIme {
     if (this.candIndex % 5 === 4) {
       this.candPage = this.candPage - 1 >= 0 ? this.candPage - 1 : 0
     }
-    this.showCandidates(true)
+    this.showCandidates()
   }
 
   candidateNext() {
     this.candIndex
-    = this.candIndex + 1 <= this.cands.length ? this.candIndex + 1 : this.cands.length - 1
+    = this.candIndex + 1 <= this.cands.length - 1 ? this.candIndex + 1 : this.cands.length - 1
     if (this.candIndex % 5 === 0) {
       this.candPage
         = this.candPage + 1 < this.cands.length / 5
           ? this.candPage + 1
           : Math.floor(this.cands.length / 5)
     }
-    this.showCandidates(true)
+    this.showCandidates()
   }
 
   candidatePageUp() {
     this.candIndex = this.candPage - 1 >= 0 ? this.candIndex - 5 : this.candIndex
     this.candPage = this.candPage - 1 >= 0 ? this.candPage - 1 : 0
-    this.showCandidates(true)
+    this.showCandidates()
   }
 
   candidatePageDown() {
@@ -313,7 +280,7 @@ export class SimpleIme {
       = this.candPage + 1 < this.cands.length / 5
         ? this.candPage + 1
         : Math.floor(this.cands.length / 5)
-    this.showCandidates(true)
+    this.showCandidates()
   }
 
   clearCandidate() {
@@ -352,7 +319,7 @@ export class SimpleIme {
       }
       this.setMatchLens(match_lens)
     }
-    this.showCandidates(true)
+    this.showCandidates()
   }
 
   getNthCandidate(n: number) {
@@ -364,12 +331,12 @@ export class SimpleIme {
   }
 
   getPredictText() {
-    return $('#cloud_input_predict').text()
+    return $('#sime-predict').text()
   }
 
   hideComposition() {
     this.typeOn = false
-    $('#cloud_input_composition').hide()
+    $('#sime-composition').hide()
   }
 
   hideStatus() {
@@ -377,31 +344,20 @@ export class SimpleIme {
   }
 
   highBack() {
-    $('.cloud_input_cnd').css({
-      'color': '#000000',
-      'text-shadow': 'rgba(10, 10, 10, 0.5) 1px 2px 2px',
-      'font-size': '100%',
-      'opacity': '1.0',
-    })
-    $('.cloud_input_cnd')
+    $('.sime-cnd')
+      .removeClass('highlight')
+
+    $('.sime-cnd')
       .eq(this.candIndex % 5)
-      .css({
-        'color': 'rgba(66, 140, 240, 0.5)',
-        'text-shadow': 'rgba(66, 140, 240, 0.5) 1px 2px 2px',
-        'opacity': '0.9',
-      })
-    if (this.candPage === 0) {
-      $('.cloud_input_drct').eq(0).css({ visibility: 'hidden' })
-    }
-    else {
-      $('.cloud_input_drct').eq(0).css({ visibility: 'visible' })
-    }
-    if ((this.candPage + 1) * $('.cloud_input_cnd').length >= this.cands.length) {
-      $('.cloud_input_drct').eq(1).css({ visibility: 'hidden' })
-    }
-    else {
-      $('.cloud_input_drct').eq(1).css({ visibility: 'visible' })
-    }
+      .addClass('highlight')
+
+    this.candPage === 0
+      ? $('.sime-prev-cand-button').addClass('disabled')
+      : $('.sime-prev-cand-button').removeClass('disabled')
+
+    5 * (this.candPage + 1) >= this.cands.length
+      ? $('.sime-next-cand-button').addClass('disabled')
+      : $('.sime-next-cand-button').removeClass('disabled')
   }
 
   init() {
@@ -410,12 +366,13 @@ export class SimpleIme {
       this.switchShape,
       this.switchMethod,
     )
+    createInputView()
     this.addCSSandHTML()
     this.bindEvents()
     const top = this.newIn.offset()?.top ?? 0
     const left = this.newIn.offset()?.left ?? 0
     const height = this.newIn.height() ?? 0
-    $('#cloud_input_composition').css({
+    $('#sime-composition').css({
       top: `${top + height}px`,
       left: `${left}px`,
     })
@@ -470,39 +427,27 @@ export class SimpleIme {
   }
 
   setPredictText(str: string) {
-    $('#cloud_input_predict').text(str)
+    $('#sime-predict').text(str)
   }
 
-  showCandidates(success: boolean) {
-    if (!success) {
-      this.clearCandidate()
-      $('#cloud_input_error').html('Communication Timeout')
-      $('.cloud_input_cnd').hide()
-      $('.cloud_input_drct').hide()
-    }
-    else {
-      $('#cloud_input_error').html('')
-      $('.cloud_input_cnd').show()
-      $('.cloud_input_drct').show()
-    }
-
-    const len = $('.cloud_input_cnd').length
+  showCandidates() {
+    const len = $('.sime-cnd').length
     const m = (this.candPage + 1) * len - this.cands.length > 0 ? this.cands.length % len : len
     for (let i = 0; i < m; i++) {
       let str = ''
       str += `${i + 1}. `
       str += this.cands[i + this.candPage * 5]
-      $('.cloud_input_cnd').eq(i).text(str)
+      $('.sime-cnd').eq(i).text(str)
     }
     for (let i = m; i < len; i++) {
-      $('.cloud_input_cnd').eq(i).text('')
+      $('.sime-cnd').eq(i).text('')
     }
     this.highBack()
   }
 
   showComposition() {
     this.typeOn = true
-    $('#cloud_input_composition').show()
+    $('#sime-composition').show()
   }
 
   showStatus() {

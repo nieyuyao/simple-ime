@@ -16,7 +16,7 @@ export function createToolbar(
   const contentHtml = toolbarContentHtml
     .replace('{pinyinIcon}', () => chIcon)
     .replace('{caseIcon}', () => quanjiaoIcon)
-    .replace('{punctIcon}', () => semiEnIcon)
+    .replace('{punctIcon}', () => semiChIcon)
   toolbarEl.innerHTML = contentHtml
   const methodIcons = [chIcon, enIcon]
   const shapeIcons = [quanjiaoIcon, banjiaoIcon]
