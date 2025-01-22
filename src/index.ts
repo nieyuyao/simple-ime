@@ -1,4 +1,5 @@
 import $  from 'jquery'
+import CloudInputCss from './styles/index.scss?inline'
 import { getCandidates } from './ime-engine'
 import ban50Png from './img/ban50.png?inline'
 import pin50Png from './img/pin50.png?inline'
@@ -6,12 +7,11 @@ import en50Png from './img/en50.png?inline'
 import banjiao50Png from './img/banjiao50.png?inline'
 import quanjiao50Png from './img/quanjiao50.png?inline'
 import quan50Png from './img/quan50.png?inline'
-import CloudInputCss from './cloud-input.css?inline'
 import { isEditableElement, updateContent } from './utils/dom'
 import { dispatchCompositionEvent, dispatchInputEvent } from './utils/event'
 import { version } from '../package.json'
 
-class CloudInputObj {
+export class SimpleIme {
   candPage = 0
 
   candIndex = 0
@@ -562,5 +562,3 @@ class CloudInputObj {
     this.hideStatus()
   }
 }
-
-window.CloudInput = new CloudInputObj()

@@ -1,4 +1,6 @@
-import '../src/cloud-input'
+import { SimpleIme } from '../src'
 
-window.CloudInput.init()
-window.CloudInput.turnOn()
+const ime = new SimpleIme()
+
+ime.init()
+ime.turnOn()
