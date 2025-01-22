@@ -1,63 +1,63 @@
 #cloud_input_composition {
-	font-family: Lucida Sans, Helvetica, sans-serif;
-	font-size: 16px;
-	font-weight: 400;
-	color: #000;
-	text-shadow: rgba(10, 10, 10, 0.5) 1px 2px 2px;
-	display: none;
-	position: absolute;
-	width: auto;
-	height: auto;
-	border: 3px;
-	padding: 3px;
-	margin: auto;
-	background-color: AliceBlue;
-	opacity: 0.9;
-	border-radius: 5px;
-	-webkit-border-radius: 5px;
-	border-color: blue; 
-	-webkit-box-shadow: rgba(66, 140, 240, 0.5) 0px 5px 8px;
-	box-shadow: rgba(66, 140, 240, 0.5) 0px 5px 8px;
-	z-index: 987654321;
-	text-align: left;
+  font-family: Lucida Sans, Helvetica, sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  color: #000;
+  text-shadow: rgba(10, 10, 10, 0.5) 1px 2px 2px;
+  display: none;
+  position: absolute;
+  width: auto;
+  height: auto;
+  border: 3px;
+  padding: 3px;
+  margin: auto;
+  background-color: AliceBlue;
+  opacity: 0.9;
+  border-radius: 5px;
+  -webkit-border-radius: 5px;
+  border-color: blue;
+  -webkit-box-shadow: rgba(66, 140, 240, 0.5) 0px 5px 8px;
+  box-shadow: rgba(66, 140, 240, 0.5) 0px 5px 8px;
+  z-index: 987654321;
+  text-align: left;
 }
 
-#cloud_input_composition tr, td {
-	vertical-align: middle;
+#cloud_input_composition tr,
+td {
+  vertical-align: middle;
 }
 
 #cloud_input_composition div {
-	cursor: move;
+  cursor: move;
 }
 
 #cloud_input_composition td:hover {
-	cursor: pointer;
+  cursor: pointer;
 }
 
 #cloud_input_composition .cloud_input_drct {
-	color: rgba(66, 140, 240, 0.5);
-	text-shadow: rgba(66, 140, 240, 0.5) 1px 2px 2px; 
-	opacity:0.9;
+  color: rgba(66, 140, 240, 0.5);
+  text-shadow: rgba(66, 140, 240, 0.5) 1px 2px 2px;
+  opacity: 0.9;
 }
 
-#cloud_input_status {
-	display: none;
-	position: fixed;
-	height: 34px;
-	border: 3px;
-	padding: 3px;
-	margin: auto;
-	right: 50px;
-	bottom: 50px;
-	background-color: AliceBlue;
-	border-radius: 5px;
-	border-color: blue; 
-	box-shadow: rgba(66, 140, 240, 0.5) 0px 5px 8px;
-	z-index: 987654321;
-}
+#sime-toolbar {
+  position: fixed;
+  right: 50px;
+  bottom: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  width: 108px;
+  height: 32px;
+  border-radius: 2px;
+  background-color: #fff;
+  box-shadow: 0px 3px 4px 0px rgba(37, 56, 108, 0.08), 0px 0px 20px 0px rgba(49, 70, 125, 0.12);
+  z-index: 987654321;
 
-#cloud_input_status img {
-	border: 0;
-	margin: 0;
-	padding: 0;
+  .sime-toolbar-icon {
+    width: 20px;
+    height: 20px;
+  }
 }

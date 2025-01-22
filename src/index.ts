@@ -1,15 +1,10 @@
 import $ from 'jquery'
 import { version } from '../package.json'
 import { getCandidates } from './ime-engine'
-import ban50Png from './img/ban50.png?inline'
-import banjiao50Png from './img/banjiao50.png?inline'
-import en50Png from './img/en50.png?inline'
-import pin50Png from './img/pin50.png?inline'
-import quan50Png from './img/quan50.png?inline'
-import quanjiao50Png from './img/quanjiao50.png?inline'
 import CloudInputCss from './styles/index.scss?inline'
 import { isEditableElement, updateContent } from './utils/dom'
 import { dispatchCompositionEvent, dispatchInputEvent } from './utils/event'
+import { createToolbar } from './views/create-toolbar'
 
 export class SimpleIme {
   candPage = 0
@@ -42,6 +37,8 @@ export class SimpleIme {
 
   version = version
 
+  toolbarHandle: ReturnType<typeof createToolbar>
+
   addCSSandHTML() {
     $(`
       <div id="cloud_input_composition">
@@ -71,17 +68,6 @@ export class SimpleIme {
         </table>
       </div>
       `).appendTo('body')
-
-    $(`<div id='cloud_input_status'>
-      <table>
-      <tr>
-      <td><img src="${pin50Png}"></td>
-      <td><img src="${banjiao50Png}"></td>
-      <td><img src="${quan50Png}"></td>
-      </tr>
-      </table>
-      </div>`).appendTo('body')
-    $('#cloud_input_status').hide()
     $(`<style type='text/css'>${CloudInputCss}</style>`).appendTo('head')
   }
 
@@ -110,27 +96,6 @@ export class SimpleIme {
     $('#cloud_input_error #cloud_input_predict').mousedown((e) => {
       e.preventDefault()
     })
-
-    $('#cloud_input_status img')
-      .eq(0)
-      .click((e) => {
-        e.preventDefault()
-        this.switchMethod(e.target)
-      })
-
-    $('#cloud_input_status img')
-      .eq(1)
-      .click((e) => {
-        e.preventDefault()
-        this.switchShape(e.target)
-      })
-
-    $('#cloud_input_status img')
-      .eq(2)
-      .click((e) => {
-        e.preventDefault()
-        this.switchPunct(e.target)
-      })
 
     this.bindFocusEvent()
     this.bindKeyEvent()
@@ -408,7 +373,7 @@ export class SimpleIme {
   }
 
   hideStatus() {
-    $('#cloud_input_status').hide()
+    this.toolbarHandle.hide()
   }
 
   highBack() {
@@ -440,6 +405,11 @@ export class SimpleIme {
   }
 
   init() {
+    this.toolbarHandle = createToolbar(
+      this.switchMethod,
+      this.switchShape,
+      this.switchMethod,
+    )
     this.addCSSandHTML()
     this.bindEvents()
     const top = this.newIn.offset()?.top ?? 0
@@ -536,38 +506,20 @@ export class SimpleIme {
   }
 
   showStatus() {
-    $('#cloud_input_status').show()
+    this.toolbarHandle.show()
   }
 
-  switchMethod(t: any) {
+  switchMethod = () => {
     this.method = (this.method + 1) % 2
-    switch (this.method) {
-      case 0:
-        this.chiMode = false
-        t.src = en50Png
-        break
-      case 1:
-        this.chiMode = true
-        t.src = pin50Png
-        break
-    }
+    this.chiMode = this.method === 1
   }
 
-  switchShape(t: any) {
+  switchShape = () => {
     this.shape = (this.shape + 1) % 2
-    switch (this.shape) {
-      case 0:
-        t.src = banjiao50Png
-        break
-      case 1:
-        t.src = quanjiao50Png
-        break
-    }
   }
 
-  switchPunct(t: any) {
+  switchPunct = () => {
     this.punct = (this.punct + 1) % 2
-    t.src = this.punct === 0 ? ban50Png : quan50Png
   }
 
   toggleOnOff() {
@@ -577,7 +529,7 @@ export class SimpleIme {
 
   turnOn() {
     this.isOn = true
-    this.showStatus()
+    this.toolbarHandle.show()
   }
 
   turnOff() {

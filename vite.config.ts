@@ -15,7 +15,8 @@ export default defineConfig({
   },
   plugins: [
     svgLoader({
+      svgo: true,
       defaultImport: 'url',
-    })
+    }),
   ],
 })
