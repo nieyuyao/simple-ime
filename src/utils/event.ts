@@ -7,7 +7,7 @@ export const dispatchInputEvent = (element: Element, type: string) => {
     bubbles: true,
     cancelable: true,
     detail: {
-      __source__: 'cloud_input',
+      __source__: 'cloud-input',
       isFake: true,
     },
   })

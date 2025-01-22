@@ -1,4 +1,4 @@
-import '../src/cloud_input'
+import '../src/cloud-input'
 
 window.CloudInput.init()
 window.CloudInput.turnOn()
