@@ -1,6 +1,6 @@
+import { PTrie } from 'dawg-lookup'
 import { flatten } from 'lodash-es'
 import { type Candidate, dict, packedTrie } from './data/google_pinyin_dict_utf8_55320'
-import { PTrie } from 'dawg-lookup'
 
 const trie = new PTrie(packedTrie)
 
@@ -8,8 +8,8 @@ const trie = new PTrie(packedTrie)
  * @param {string} input
  * @returns
  */
-export const getCandidates = (input: string): [string[], number[]] => {
-  let list: (Candidate & { matchLen: number})[] = []
+export function getCandidates(input: string): [string[], number[]] {
+  let list: (Candidate & { matchLen: number })[] = []
   if (input) {
     const value = dict[input]
     // Best Candidate
@@ -21,7 +21,8 @@ export const getCandidates = (input: string): [string[], number[]] => {
           matchLen: input.length,
         }
       })
-    } else if (input.length >= 1) {
+    }
+    else if (input.length >= 1) {
       const completions = trie.completions(input)
       const tempList = completions.map((key) => {
         return dict[key]
@@ -57,11 +58,11 @@ export const getCandidates = (input: string): [string[], number[]] => {
     }
 
     // sort candidates by word frequency
-    list = list.filter((item) => !!item).sort((a, b) => b.f - a.f)
+    list = list.filter(item => !!item).sort((a, b) => b.f - a.f)
   }
 
-  const candidates = list.map((item) => item.w)
-  const matchLens = list.map((item) => item.matchLen)
+  const candidates = list.map(item => item.w)
+  const matchLens = list.map(item => item.matchLen)
 
   return [candidates, matchLens]
 }

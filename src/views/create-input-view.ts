@@ -1,5 +1,5 @@
 import inputViewHtml from './inputView.html?raw'
 
-export const createInputView = () => {
+export function createInputView(): string {
   return inputViewHtml
 }

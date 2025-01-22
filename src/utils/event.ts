@@ -1,8 +1,8 @@
-export const isCompositionEvent = (type: string) => {
+export function isCompositionEvent(type: string) {
   return ['compositionstart', 'compositionupdate', 'compositionend'].includes(type)
 }
 
-export const dispatchInputEvent = (element: Element, type: string) => {
+export function dispatchInputEvent(element: Element, type: string) {
   const event = new CustomEvent(type, {
     bubbles: true,
     cancelable: true,
@@ -14,11 +14,7 @@ export const dispatchInputEvent = (element: Element, type: string) => {
   element.dispatchEvent(event)
 }
 
-export const dispatchCompositionEvent = (
-  element: Element,
-  type: 'compositionstart' | 'compositionupdate' | 'compositionend',
-  data: string
-) => {
+export function dispatchCompositionEvent(element: Element, type: 'compositionstart' | 'compositionupdate' | 'compositionend', data: string) {
   const event = new CompositionEvent(type, {
     bubbles: true,
     cancelable: true,
