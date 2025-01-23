@@ -1,19 +1,19 @@
 {
-	"compilerOptions": {
-    "outDir": "dist",
-		"strictNullChecks": true,
-    "moduleResolution": "node",
-    "module": "esnext",
-    "lib": ["ES2016", "DOM"],
-    "esModuleInterop": true,
-    "noUnusedParameters": true,
-    "noUnusedLocals": true,
-    "noImplicitAny": false,
+  "compilerOptions": {
     "target": "es6",
-    "skipLibCheck": true,
+    "lib": ["ES2016", "DOM"],
+    "module": "esnext",
+    "moduleResolution": "node",
     "resolveJsonModule": true,
+    "allowJs": true,
+    "strictNullChecks": true,
+    "noImplicitAny": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "outDir": "dist",
     "sourceMap": false,
-    "allowJs": true
-	},
-	"include": ["./src/**/*", "example/**/*", "./global.d.ts"]
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": ["./src/**/*", "example/**/*", "./global.d.ts"]
 }

@@ -1,41 +1,43 @@
 import { PTrie } from 'dawg-lookup'
 import { flatten } from 'lodash-es'
-import { type Candidate, dict, packedTrie } from './data/google_pinyin_dict_utf8_55320'
+import dictTxt from './data/dict.txt?raw'
+import packedTrieTxt from './data/packed-trie.txt?raw'
 
-const trie = new PTrie(packedTrie)
+type Dict = Record<string, string>
 
-/**
- * @param {string} input
- * @returns
- */
+const trie = new PTrie(packedTrieTxt)
+
+const dict: Dict = JSON.parse(dictTxt)
+
+type ResultList = ({ w: string, f: number, matchLen: number })[]
+
+function splitDictContent(content: string, list: ResultList, matchLen: number) {
+  const splits = content.split(',')
+  for (let i = 0; i < splits.length; i += 2) {
+    list.push({
+      w: splits[i],
+      f: +splits[i + 1],
+      matchLen,
+    })
+  }
+}
+
 export function getCandidates(input: string): [string[], number[]] {
-  let list: (Candidate & { matchLen: number })[] = []
+  let list: ResultList = []
   if (input) {
     const value = dict[input]
     // Best Candidate
     if (value) {
-      // full pinyin match, or abbr match.
-      list = value.map((item) => {
-        return {
-          ...item,
-          matchLen: input.length,
-        }
-      })
+      splitDictContent(value, list, input.length)
     }
     else if (input.length >= 1) {
-      const completions = trie.completions(input)
-      const tempList = completions.map((key) => {
-        return dict[key]
-          ? dict[key].map((item) => {
-              return {
-                ...item,
-                matchLen: key.length,
-              }
-            })
-          : undefined
+      const completions = trie.completions(input) as string[]
+      completions.forEach((key) => {
+        if (!dict[key]) {
+          return
+        }
+        splitDictContent(dict[key], list, key.length)
       })
-      // pinyin prefix match, using prepared packed trie data.
-      list = flatten(tempList)
     }
 
     if (list.length <= 0 && input.length >= 1) {
@@ -44,14 +46,7 @@ export function getCandidates(input: string): [string[], number[]] {
         if (dict[subInput]) {
           subInput = subInput.substring(0, i)
           const value = dict[subInput]
-          if (value) {
-            list = value.map((item) => {
-              return {
-                ...item,
-                matchLen: subInput.length,
-              }
-            })
-          }
+          splitDictContent(value, list, subInput.length)
           break
         }
       }
