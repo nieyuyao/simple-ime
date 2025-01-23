@@ -1,11 +1,17 @@
 import $ from 'jquery'
 import { version } from '../package.json'
-import { getCandidates } from './ime-engine'
+import { getCandidates } from './engine'
 import CloudInputCss from './styles/index.scss?inline'
 import { isEditableElement, updateContent } from './utils/dom'
 import { dispatchCompositionEvent, dispatchInputEvent } from './utils/event'
+import { findNextConvertPinyin, hasChinese, isLatin } from './utils/pinyin'
 import { createInputView } from './views/create-input-view'
 import { createToolbar } from './views/create-toolbar'
+
+interface Options {
+  // 是否支持单引号分词
+  singleQuoteDivide?: boolean
+}
 
 export class SimpleIme {
   candPage = 0
@@ -14,7 +20,7 @@ export class SimpleIme {
 
   cands: string[] = []
 
-  candsRsp: number[] = []
+  candsMatchLens: number[] = []
 
   chiMode = true
 
@@ -34,7 +40,7 @@ export class SimpleIme {
 
   originPinyin = ''
 
-  toConvertPinyin = ''
+  options: Options = { singleQuoteDivide: true }
 
   version = version
 
@@ -114,14 +120,12 @@ export class SimpleIme {
         if (!this.isOn || !this.newIn) {
           return
         }
-        // TODO: 支持单引号分词
         // TODO: 限制pinyin字符数
         // TODO: 小尺寸页面兼容
         if (this.chiMode && this.typeOn) {
           if (e.key === 'Backspace') {
             e.preventDefault()
-            if (this.toConvertPinyin !== this.originPinyin) {
-              this.toConvertPinyin = this.originPinyin
+            if (hasChinese(this.getPredictText())) {
               this.setPredictText(this.originPinyin)
               this.fetchCandidateAsync()
               dispatchCompositionEvent(this.newIn[0], 'compositionupdate', this.getPredictText())
@@ -131,7 +135,6 @@ export class SimpleIme {
               const pre = this.getPredictText()
               this.setPredictText(pre.substr(0, pre.length - 1))
               this.originPinyin = this.getPredictText()
-              this.toConvertPinyin = this.originPinyin
               // pre has length 1 means predict empty after backspace
               if (pre.length === 1) {
                 this.hideComposition()
@@ -176,7 +179,11 @@ export class SimpleIme {
           return
         }
         if (this.chiMode) {
-          if (/^[a-z]$/.test(e.key)) {
+          if (/^[a-z']$/.test(e.key)) {
+            if (e.key === '\'' && (!this.options.singleQuoteDivide || !this.typeOn)) {
+              e.preventDefault()
+              return
+            }
             /* 输入小写字母 */
             e.preventDefault()
             if (this.typeOn) {
@@ -190,7 +197,6 @@ export class SimpleIme {
               this.getPredictText() + e.key,
             )
             this.originPinyin += e.key
-            this.toConvertPinyin += e.key
             this.fetchCandidateAsync()
           }
           else if (e.key === 'Enter') {
@@ -287,7 +293,7 @@ export class SimpleIme {
     this.candPage = 0
     this.candIndex = 0
     this.cands = []
-    this.candsRsp = []
+    this.candsMatchLens = []
   }
 
   commitText() {
@@ -297,28 +303,20 @@ export class SimpleIme {
     updateContent(this.newIn[0], str)
     dispatchInputEvent(this.newIn[0], 'input')
     this.originPinyin = ''
-    this.toConvertPinyin = ''
     this.setPredictText('')
   }
 
   fetchCandidateAsync() {
     this.clearCandidate()
-    const input = this.toConvertPinyin
-    const [candidates, matchLens] = getCandidates(input)
-    const data = [input, candidates, matchLens]
-    const origin = data[0]
-    const has_match_lens = data.length === 3
+    const { pinyin, suffixQuotes } = findNextConvertPinyin(this.getPredictText())
+    const [candidates, matchLens] = getCandidates(pinyin)
     this.setCandidates(candidates)
-    if (has_match_lens) {
-      this.setMatchLens(matchLens)
+    if (suffixQuotes) {
+      matchLens.forEach((_, i) => {
+        matchLens[i] += suffixQuotes
+      })
     }
-    else {
-      const match_lens: number[] = []
-      for (let i = 0; i < data[1].length; i++) {
-        match_lens.push(origin.length)
-      }
-      this.setMatchLens(match_lens)
-    }
+    this.setMatchLens(matchLens)
     this.showCandidates()
   }
 
@@ -327,7 +325,7 @@ export class SimpleIme {
   }
 
   getNthMatchLen(n: number) {
-    return this.candsRsp[5 * this.candPage + n - 1]
+    return this.candsMatchLens[5 * this.candPage + n - 1]
   }
 
   getPredictText() {
@@ -378,10 +376,6 @@ export class SimpleIme {
     })
   }
 
-  isLatin(code: number) {
-    return code < 128
-  }
-
   nthCandidateExists(n: number) {
     return 5 * this.candPage + n - 1 < this.cands.length
   }
@@ -394,7 +388,7 @@ export class SimpleIme {
     const tmpPre = this.getPredictText()
     let chineseLen = 0
     for (let i = 0; i < tmpPre.length; i++) {
-      if (this.isLatin(tmpPre.charCodeAt(i))) {
+      if (isLatin(tmpPre.charCodeAt(i))) {
         chineseLen = i
         break
       }
@@ -410,8 +404,7 @@ export class SimpleIme {
       dispatchCompositionEvent(this.newIn[0], 'compositionend', finPre)
     }
     else {
-      this.toConvertPinyin = tmpPre.substring(chineseLen + this.getNthMatchLen(selection))
-      finPre += this.toConvertPinyin
+      finPre += tmpPre.substring(chineseLen + this.getNthMatchLen(selection))
       this.setPredictText(finPre)
       this.fetchCandidateAsync()
       dispatchCompositionEvent(this.newIn[0], 'compositionupdate', finPre)
@@ -423,7 +416,7 @@ export class SimpleIme {
   }
 
   setMatchLens(match_lens: number[]) {
-    this.candsRsp = match_lens
+    this.candsMatchLens = match_lens
   }
 
   setPredictText(str: string) {
