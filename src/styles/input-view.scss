@@ -63,3 +63,25 @@
   background-image: url(../img/right-arrow.png);
   background-position: right 9px;
 }
+
+.sime-cursor {
+  display: inline-block;
+  width: 1px;
+  height: 16px;
+  background-color: black;
+  animation: blink 1.2s infinite reverse;
+}
+
+@keyframes blink {
+  0% {
+    opacity: 1;
+  }
+  
+  70% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}

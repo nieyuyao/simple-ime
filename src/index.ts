@@ -1,17 +1,21 @@
+import type { Options } from './options'
 import $ from 'jquery'
 import { version } from '../package.json'
 import { getCandidates } from './engine'
 import CloudInputCss from './styles/index.scss?inline'
+import {
+  deleteCharAtCursorPosition,
+  generateTextByCursorPosition,
+  insertCharAtCursorPosition,
+  moveCursorPositionLeft,
+  moveCursorPositionRight,
+  replaceTextAndUpdateCursorPosition,
+} from './utils/cursor'
 import { isEditableElement, updateContent } from './utils/dom'
 import { dispatchCompositionEvent, dispatchInputEvent } from './utils/event'
 import { findNextConvertPinyin, hasChinese, isLatin } from './utils/pinyin'
 import { createInputView } from './views/create-input-view'
 import { createToolbar } from './views/create-toolbar'
-
-interface Options {
-  // 是否支持单引号分词
-  singleQuoteDivide?: boolean
-}
 
 export class SimpleIme {
   candPage = 0
@@ -40,36 +44,19 @@ export class SimpleIme {
 
   originPinyin = ''
 
-  options: Options = { singleQuoteDivide: true }
+  options: Required<Options> = { singleQuoteDivide: true, cursorMode: false, maxPinyinLength: 128 }
 
   version = version
 
   toolbarHandle: ReturnType<typeof createToolbar>
 
-  addCSSandHTML() {
+  cursorPosition = 0
+
+  injectCSS() {
     $(`<style type='text/css'>${CloudInputCss}</style>`).appendTo('head')
   }
 
   bindEvents() {
-    $('.sime-cnd').mousedown((e) => {
-      e.preventDefault()
-      const index = $('.sime-cnd').index(e.target)
-      this.selectCandidate(index + 1)
-      this.flag = true
-    })
-
-    $('.sime-prev-cand-button')
-      .mousedown((e) => {
-        e.preventDefault()
-        this.candidatePageUp()
-      })
-
-    $('.sime-next-cand-button')
-      .mousedown((e) => {
-        e.preventDefault()
-        this.candidatePageDown()
-      })
-
     this.bindFocusEvent()
     this.bindKeyEvent()
   }
@@ -116,29 +103,48 @@ export class SimpleIme {
     window.addEventListener(
       'keydown',
       (e) => {
-        // Respond to the character inputed
-        if (!this.isOn || !this.newIn) {
+        const { isOn, newIn, originPinyin } = this
+        if (!isOn || !newIn) {
           return
         }
-        // TODO: 限制pinyin字符数
-        // TODO: 小尺寸页面兼容
         if (this.chiMode && this.typeOn) {
           if (e.key === 'Backspace') {
             e.preventDefault()
-            if (hasChinese(this.getPredictText())) {
-              this.setPredictText(this.originPinyin)
+            const text = this.getPredictText()
+            if (hasChinese(text)) {
+              if (this.options.cursorMode) {
+                let chineseLen = 0
+                for (let i = 0; i < text.length; i++) {
+                  if (isLatin(text.charCodeAt(i))) {
+                    chineseLen = i
+                    break
+                  }
+                }
+                const { html, cursorPosition } = replaceTextAndUpdateCursorPosition(text, 0, chineseLen, originPinyin.substring(0, originPinyin.length - (text.length - chineseLen)), this.cursorPosition)
+                this.cursorPosition = cursorPosition
+                $('#sime-predict').html(html)
+              }
+              else {
+                this.setPredictText(originPinyin)
+              }
               this.fetchCandidateAsync()
-              dispatchCompositionEvent(this.newIn[0], 'compositionupdate', this.getPredictText())
+              dispatchCompositionEvent(this.newIn[0], 'compositionupdate', text)
               return
             }
             else {
-              const pre = this.getPredictText()
-              this.setPredictText(pre.substr(0, pre.length - 1))
+              if (this.options.cursorMode) {
+                const html = deleteCharAtCursorPosition(text, this.cursorPosition)
+                this.cursorPosition--
+                $('#sime-predict').html(html)
+              }
+              else {
+                this.setPredictText(text.substring(0, text.length - 1))
+              }
               this.originPinyin = this.getPredictText()
-              // pre has length 1 means predict empty after backspace
-              if (pre.length === 1) {
+              if (text.length === 1) {
                 this.hideComposition()
                 this.clearCandidate()
+                this.cursorPosition = 0
               }
               else {
                 this.fetchCandidateAsync()
@@ -148,6 +154,7 @@ export class SimpleIme {
           }
           else if (e.code === 'Escape') {
             this.setPredictText('')
+            this.cursorPosition = 0
             this.hideComposition()
             this.clearCandidate()
           }
@@ -184,7 +191,6 @@ export class SimpleIme {
               e.preventDefault()
               return
             }
-            /* 输入小写字母 */
             e.preventDefault()
             if (this.typeOn) {
               dispatchCompositionEvent(this.newIn[0], 'compositionupdate', this.getPredictText())
@@ -193,9 +199,15 @@ export class SimpleIme {
               this.showComposition()
               dispatchCompositionEvent(this.newIn[0], 'compositionstart', this.getPredictText())
             }
-            this.setPredictText(
-              this.getPredictText() + e.key,
-            )
+            const text = this.getPredictText()
+            if (this.options.cursorMode) {
+              const html = insertCharAtCursorPosition(text, e.key, this.cursorPosition)
+              $('#sime-predict').html(html)
+            }
+            else {
+              this.setPredictText(text + e.key)
+            }
+            this.cursorPosition++
             this.originPinyin += e.key
             this.fetchCandidateAsync()
           }
@@ -242,6 +254,14 @@ export class SimpleIme {
             e.preventDefault()
             this.candidateNext()
           }
+          else if (e.key === '[') {
+            e.preventDefault()
+            this.moveCursorPositionLeft()
+          }
+          else if (e.key === ']') {
+            e.preventDefault()
+            this.moveCursorPositionRight()
+          }
           else {
             if (this.typeOn) {
               e.preventDefault()
@@ -263,7 +283,7 @@ export class SimpleIme {
 
   candidateNext() {
     this.candIndex
-    = this.candIndex + 1 <= this.cands.length - 1 ? this.candIndex + 1 : this.cands.length - 1
+      = this.candIndex + 1 <= this.cands.length - 1 ? this.candIndex + 1 : this.cands.length - 1
     if (this.candIndex % 5 === 0) {
       this.candPage
         = this.candPage + 1 < this.cands.length / 5
@@ -280,8 +300,7 @@ export class SimpleIme {
   }
 
   candidatePageDown() {
-    this.candIndex
-    = this.candPage + 1 < this.cands.length / 5 ? this.candIndex + 5 : this.candIndex
+    this.candIndex = this.candPage + 1 < this.cands.length / 5 ? this.candIndex + 5 : this.candIndex
     this.candPage
       = this.candPage + 1 < this.cands.length / 5
         ? this.candPage + 1
@@ -297,8 +316,6 @@ export class SimpleIme {
   }
 
   commitText() {
-    // TODO: support cursor position/selection range
-    // TODO: fetch from remote server
     const str = this.getPredictText()
     updateContent(this.newIn[0], str)
     dispatchInputEvent(this.newIn[0], 'input')
@@ -329,7 +346,7 @@ export class SimpleIme {
   }
 
   getPredictText() {
-    return $('#sime-predict').text()
+    return $('#sime-predict')[0].innerText || ''
   }
 
   hideComposition() {
@@ -342,8 +359,7 @@ export class SimpleIme {
   }
 
   highBack() {
-    $('.sime-cnd')
-      .removeClass('highlight')
+    $('.sime-cnd').removeClass('highlight')
 
     $('.sime-cnd')
       .eq(this.candIndex % 5)
@@ -359,13 +375,23 @@ export class SimpleIme {
   }
 
   init() {
-    this.toolbarHandle = createToolbar(
-      this.switchMethod,
-      this.switchShape,
-      this.switchMethod,
+    this.toolbarHandle = createToolbar(this.switchMethod, this.switchShape, this.switchMethod)
+    createInputView(
+      (e, index) => {
+        e.preventDefault()
+        this.selectCandidate(index + 1)
+        this.flag = true
+      },
+      (e) => {
+        e.preventDefault()
+        this.candidatePageUp()
+      },
+      (e) => {
+        e.preventDefault()
+        this.candidatePageDown()
+      },
     )
-    createInputView()
-    this.addCSSandHTML()
+    this.injectCSS()
     this.bindEvents()
     const top = this.newIn.offset()?.top ?? 0
     const left = this.newIn.offset()?.left ?? 0
@@ -384,30 +410,45 @@ export class SimpleIme {
     if (!this.nthCandidateExists(selection)) {
       return
     }
-    const tmpCand = this.getNthCandidate(selection)
-    const tmpPre = this.getPredictText()
+    const cand = this.getNthCandidate(selection)
+    const text = this.getPredictText()
     let chineseLen = 0
-    for (let i = 0; i < tmpPre.length; i++) {
-      if (isLatin(tmpPre.charCodeAt(i))) {
+    for (let i = 0; i < text.length; i++) {
+      if (isLatin(text.charCodeAt(i))) {
         chineseLen = i
         break
       }
     }
-    let finPre = ''
-    finPre = tmpPre.substring(0, chineseLen)
-    finPre += tmpCand
-    if (tmpPre.substring(chineseLen + this.getNthMatchLen(selection)).length === 0) {
-      this.setPredictText(finPre)
+    let newText = ''
+    newText = text.substring(0, chineseLen)
+    newText += cand
+    newText += text.substring(chineseLen + this.getNthMatchLen(selection))
+    if (text.substring(chineseLen + this.getNthMatchLen(selection)).length === 0) {
+      this.setPredictText(newText)
       this.commitText()
       this.hideComposition()
       this.clearCandidate()
-      dispatchCompositionEvent(this.newIn[0], 'compositionend', finPre)
+      this.cursorPosition = 0
+      dispatchCompositionEvent(this.newIn[0], 'compositionend', newText)
     }
     else {
-      finPre += tmpPre.substring(chineseLen + this.getNthMatchLen(selection))
-      this.setPredictText(finPre)
+      if (this.options.cursorMode) {
+        const { html, cursorPosition } = replaceTextAndUpdateCursorPosition(
+          text,
+          chineseLen,
+          this.getNthMatchLen(selection),
+          cand,
+          this.cursorPosition,
+        )
+        this.cursorPosition = cursorPosition
+        $('#sime-predict').html(html)
+        newText = this.getPredictText()
+      }
+      else {
+        this.setPredictText(newText)
+      }
       this.fetchCandidateAsync()
-      dispatchCompositionEvent(this.newIn[0], 'compositionupdate', finPre)
+      dispatchCompositionEvent(this.newIn[0], 'compositionupdate', newText)
     }
   }
 
@@ -460,6 +501,31 @@ export class SimpleIme {
     this.punct = (this.punct + 1) % 2
   }
 
+  moveCursorPositionLeft() {
+    if (this.cursorPosition - 1 < 0) {
+      return
+    }
+    const text = this.getPredictText()
+    const oldCursorPosition = this.cursorPosition
+    this.cursorPosition = moveCursorPositionLeft(text, oldCursorPosition)
+    if (this.cursorPosition === oldCursorPosition) {
+      return
+    }
+    const html = generateTextByCursorPosition(text, this.cursorPosition)
+    $('#sime-predict').html(html)
+  }
+
+  moveCursorPositionRight() {
+    const text = this.getPredictText()
+    const oldCursorPosition = this.cursorPosition
+    this.cursorPosition = moveCursorPositionRight(text, oldCursorPosition)
+    if (this.cursorPosition === oldCursorPosition) {
+      return
+    }
+    const html = generateTextByCursorPosition(text, this.cursorPosition)
+    $('#sime-predict').html(html)
+  }
+
   toggleOnOff() {
     this.isOn = !this.isOn
     this.isOn ? this.turnOn() : this.turnOff()
@@ -473,8 +539,13 @@ export class SimpleIme {
   turnOff() {
     this.isOn = false
     this.setPredictText('')
+    this.cursorPosition = 0
     this.hideComposition()
     this.clearCandidate()
     this.hideStatus()
+  }
+
+  dispose() {
+    // TODO:
   }
 }

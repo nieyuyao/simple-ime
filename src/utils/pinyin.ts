@@ -14,6 +14,10 @@ export function isLatin(code: number) {
   return code < 128
 }
 
+export function isChinese(code: number) {
+  return code > 128
+}
+
 export function hasChinese(str: string) {
   for (let i = 0; i < str.length; i++) {
     if (!isLatin(str.charCodeAt(i))) {
