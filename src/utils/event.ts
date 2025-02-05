@@ -7,7 +7,7 @@ export function dispatchInputEvent(element: Element, type: string) {
     bubbles: true,
     cancelable: true,
     detail: {
-      __source__: 'cloud-input',
+      __source__: 'simple-ime',
       isFake: true,
     },
   })

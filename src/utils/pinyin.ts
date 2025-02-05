@@ -1,13 +1,13 @@
 export function findNextConvertPinyin(pinyin: string): {
   pinyin: string
-  suffixQuotes: number
+  quotes: number
 } {
   const reg = /([a-z]+)('*)/
   const matches = pinyin.match(reg)
   if (matches && matches.length >= 3) {
-    return { pinyin: matches[1], suffixQuotes: matches[2].length }
+    return { pinyin: matches[1], quotes: matches[2].length }
   }
-  return { pinyin, suffixQuotes: 0 }
+  return { pinyin, quotes: 0 }
 }
 
 export function isLatin(code: number) {

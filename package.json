@@ -1,14 +1,17 @@
 {
-  "name": "cloudinput",
+  "name": "simple-ime",
   "type": "module",
   "version": "1.0.0",
   "description": "An browser plugin to use Chinese Pinyin Input Method.",
   "author": "nieyuyao",
   "license": "MIT",
+  "repository": {
+    "url": "https://github.com/nieyuyao/simple-ime.git"
+  },
   "main": "index.js",
   "scripts": {
     "dev": "vite example --force",
-    "build:lib": "vite build",
+    "build:global": "vite build",
     "test": "vitest",
     "compressDict": "node --loader ts-node/esm --no-warnings=ExperimentalWarning src/scripts/compress-dict.ts"
   },

@@ -7,9 +7,9 @@ export default defineConfig({
     outDir: './dist',
     lib: {
       entry: 'src/index.ts',
-      name: 'simpleIme',
-      formats: ['umd'],
-      fileName: () => `simple-ime-lib.js`,
+      name: 'SimpleIme',
+      formats: ['iife'],
+      fileName: () => 'simple-ime.global.js',
     },
     minify: false,
   },

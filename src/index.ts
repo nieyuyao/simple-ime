@@ -2,9 +2,10 @@ import type { Options } from './options'
 import $ from 'jquery'
 import { version } from '../package.json'
 import { getCandidates } from './engine'
-import CloudInputCss from './styles/index.scss?inline'
+import ImeCss from './styles/index.scss?inline'
 import {
   deleteCharAtCursorPosition,
+  findConvertPinyinByCursorPosition,
   generateTextByCursorPosition,
   insertCharAtCursorPosition,
   moveCursorPositionLeft,
@@ -17,7 +18,9 @@ import { findNextConvertPinyin, hasChinese, isLatin } from './utils/pinyin'
 import { createInputView } from './views/create-input-view'
 import { createToolbar } from './views/create-toolbar'
 
-export class SimpleIme {
+const defaultOptions: Required<Options> = { singleQuoteDivide: true, cursorMode: false, maxPinyinLength: 128 }
+
+class SimpleIme {
   candPage = 0
 
   candIndex = 0
@@ -44,7 +47,7 @@ export class SimpleIme {
 
   originPinyin = ''
 
-  options: Required<Options> = { singleQuoteDivide: true, cursorMode: false, maxPinyinLength: 128 }
+  options: Required<Options>
 
   version = version
 
@@ -53,7 +56,7 @@ export class SimpleIme {
   cursorPosition = 0
 
   injectCSS() {
-    $(`<style type='text/css'>${CloudInputCss}</style>`).appendTo('head')
+    $(`<style type='text/css'>${ImeCss}</style>`).appendTo('head')
   }
 
   bindEvents() {
@@ -325,12 +328,14 @@ export class SimpleIme {
 
   fetchCandidateAsync() {
     this.clearCandidate()
-    const { pinyin, suffixQuotes } = findNextConvertPinyin(this.getPredictText())
+    const text = this.getPredictText()
+    const { pinyin, quotes } = this.options.cursorMode ? findConvertPinyinByCursorPosition(text, this.cursorPosition) : findNextConvertPinyin(text)
+
     const [candidates, matchLens] = getCandidates(pinyin)
     this.setCandidates(candidates)
-    if (suffixQuotes) {
+    if (quotes) {
       matchLens.forEach((_, i) => {
-        matchLens[i] += suffixQuotes
+        matchLens[i] += quotes
       })
     }
     this.setMatchLens(matchLens)
@@ -374,8 +379,12 @@ export class SimpleIme {
       : $('.sime-next-cand-button').removeClass('disabled')
   }
 
-  init() {
+  init(options?: Options) {
+    this.options = { ...defaultOptions, ...options }
     this.toolbarHandle = createToolbar(this.switchMethod, this.switchShape, this.switchMethod)
+    if (!this.isOn) {
+      this.toolbarHandle.hide()
+    }
     createInputView(
       (e, index) => {
         e.preventDefault()
@@ -513,6 +522,8 @@ export class SimpleIme {
     }
     const html = generateTextByCursorPosition(text, this.cursorPosition)
     $('#sime-predict').html(html)
+
+    this.fetchCandidateAsync()
   }
 
   moveCursorPositionRight() {
@@ -524,6 +535,7 @@ export class SimpleIme {
     }
     const html = generateTextByCursorPosition(text, this.cursorPosition)
     $('#sime-predict').html(html)
+    this.fetchCandidateAsync()
   }
 
   toggleOnOff() {
@@ -548,4 +560,10 @@ export class SimpleIme {
   dispose() {
     // TODO:
   }
+}
+
+export function createSimpleIme(options?: Options) {
+  const ime = new SimpleIme()
+  ime.init(options)
+  return ime
 }

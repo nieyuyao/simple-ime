@@ -1,13 +1,13 @@
 import { expect, it } from 'vitest'
 import {
   deleteCharAtCursorPosition,
-  findNextConvertPinyin,
+  findConvertPinyinByCursorPosition,
   generateTextByCursorPosition,
   insertCharAtCursorPosition,
   moveCursorPositionLeft,
   moveCursorPositionRight,
   replaceTextAndUpdateCursorPosition,
-} from '../utils/cursor'
+} from '../src/utils/cursor'
 
 it('insertCharAtCursorPosition', () => {
   expect(insertCharAtCursorPosition('niha', 'o', -1)).toBe(
@@ -101,11 +101,14 @@ it('moveCursorPositionRight', () => {
   expect(moveCursorPositionRight('你hao', 2)).toBe<number>(3)
 })
 
-it('findNextConvertPinyin', () => {
-  expect(findNextConvertPinyin('nihao', 0)).toBe('nihao')
-  expect(findNextConvertPinyin('nihao', 1)).toBe('n')
-  expect(findNextConvertPinyin('你hao', 1)).toBe('hao')
-  expect(findNextConvertPinyin('你\'hao', 1)).toBe('\'hao')
-  expect(findNextConvertPinyin('你\'\'hao', 1)).toBe('\'\'hao')
-  expect(findNextConvertPinyin('你hao', 4)).toBe('hao')
+it('findNextConvertPinyinByCursorPosition', () => {
+  expect(findConvertPinyinByCursorPosition('nihao', 2)).toEqual({ quotes: 0, pinyin: 'ni' })
+  expect(findConvertPinyinByCursorPosition('ni\'hao', 3)).toEqual({ pinyin: 'ni', quotes: 1 })
+  expect(findConvertPinyinByCursorPosition('ni\'\'hao', 4)).toEqual({ pinyin: 'ni', quotes: 2 })
+  expect(findConvertPinyinByCursorPosition('你\'\'hao', 3)).toEqual({ quotes: 2, pinyin: 'hao' })
+  expect(findConvertPinyinByCursorPosition('你\'\'hao\'le', 3)).toEqual({ quotes: 3, pinyin: 'hao' })
+  expect(findConvertPinyinByCursorPosition('你\'\'hao\'le\'\'', 3)).toEqual({ quotes: 3, pinyin: 'hao' })
+  expect(findConvertPinyinByCursorPosition('你zenhao\'\'', 4)).toEqual({ quotes: 0, pinyin: 'zen' })
+  expect(findConvertPinyinByCursorPosition('你zen\'\'hao\'\'', 6)).toEqual({ pinyin: 'zen', quotes: 2 })
+  expect(findConvertPinyinByCursorPosition('你zen\'\'hao\'\'', 5)).toEqual({ pinyin: 'zen', quotes: 1 })
 })
