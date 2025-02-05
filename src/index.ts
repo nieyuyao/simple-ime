@@ -1,5 +1,4 @@
 import type { Options } from './options'
-import $ from 'jquery'
 import { version } from '../package.json'
 import { getCandidates } from './engine'
 import ImeCss from './styles/index.scss?inline'
@@ -35,7 +34,7 @@ class SimpleIme {
 
   method = 1
 
-  newIn: JQuery<Element> = $(document.activeElement || document.body)
+  newIn = document.activeElement || document.body
 
   punct = 0
 
@@ -56,7 +55,10 @@ class SimpleIme {
   cursorPosition = 0
 
   injectCSS() {
-    $(`<style type='text/css'>${ImeCss}</style>`).appendTo('head')
+    const style = document.createElement('style')
+    style.setAttribute('type', 'text/css')
+    style.textContent = ImeCss
+    document.head.append(style)
   }
 
   bindEvents() {
@@ -71,14 +73,13 @@ class SimpleIme {
         const activeElement = document.activeElement
         if (activeElement && isEditableElement(activeElement)) {
           this.flag = false
-          this.newIn = $(activeElement)
-          const top = this.newIn.offset()?.top ?? 0
-          const left = this.newIn.offset()?.left ?? 0
-          const height = this.newIn.height() ?? 0
-          $('#sime-composition').css({
-            top: `${top + height}px`,
-            left: `${left}px`,
-          })
+          this.newIn = activeElement
+          const { top, left, height } = this.newIn.getBoundingClientRect()
+          const el = document.getElementById('sime-composition')
+          if (el) {
+            el.style.top = `${top + height}px`
+            el.style.left = `${left}px`
+          }
           this.setPredictText('')
           this.hideComposition()
           this.clearCandidate()
@@ -125,20 +126,26 @@ class SimpleIme {
                 }
                 const { html, cursorPosition } = replaceTextAndUpdateCursorPosition(text, 0, chineseLen, originPinyin.substring(0, originPinyin.length - (text.length - chineseLen)), this.cursorPosition)
                 this.cursorPosition = cursorPosition
-                $('#sime-predict').html(html)
+                const el = document.getElementById('sime-predict')
+                if (el) {
+                  el.innerHTML = html
+                }
               }
               else {
                 this.setPredictText(originPinyin)
               }
               this.fetchCandidateAsync()
-              dispatchCompositionEvent(this.newIn[0], 'compositionupdate', text)
+              dispatchCompositionEvent(this.newIn, 'compositionupdate', text)
               return
             }
             else {
               if (this.options.cursorMode) {
                 const html = deleteCharAtCursorPosition(text, this.cursorPosition)
                 this.cursorPosition--
-                $('#sime-predict').html(html)
+                const el = document.getElementById('sime-predict')
+                if (el) {
+                  el.innerHTML = html
+                }
               }
               else {
                 this.setPredictText(text.substring(0, text.length - 1))
@@ -153,7 +160,7 @@ class SimpleIme {
                 this.fetchCandidateAsync()
               }
             }
-            dispatchCompositionEvent(this.newIn[0], 'compositionupdate', this.getPredictText())
+            dispatchCompositionEvent(this.newIn, 'compositionupdate', this.getPredictText())
           }
           else if (e.code === 'Escape') {
             this.setPredictText('')
@@ -196,16 +203,19 @@ class SimpleIme {
             }
             e.preventDefault()
             if (this.typeOn) {
-              dispatchCompositionEvent(this.newIn[0], 'compositionupdate', this.getPredictText())
+              dispatchCompositionEvent(this.newIn, 'compositionupdate', this.getPredictText())
             }
             else {
               this.showComposition()
-              dispatchCompositionEvent(this.newIn[0], 'compositionstart', this.getPredictText())
+              dispatchCompositionEvent(this.newIn, 'compositionstart', this.getPredictText())
             }
             const text = this.getPredictText()
             if (this.options.cursorMode) {
               const html = insertCharAtCursorPosition(text, e.key, this.cursorPosition)
-              $('#sime-predict').html(html)
+              const el = document.getElementById('sime-predict')
+              if (el) {
+                el.innerHTML = html
+              }
             }
             else {
               this.setPredictText(text + e.key)
@@ -320,8 +330,8 @@ class SimpleIme {
 
   commitText() {
     const str = this.getPredictText()
-    updateContent(this.newIn[0], str)
-    dispatchInputEvent(this.newIn[0], 'input')
+    updateContent(this.newIn, str)
+    dispatchInputEvent(this.newIn, 'input')
     this.originPinyin = ''
     this.setPredictText('')
   }
@@ -351,12 +361,16 @@ class SimpleIme {
   }
 
   getPredictText() {
-    return $('#sime-predict')[0].innerText || ''
+    const el = document.getElementById('sime-predict')
+    return el?.innerText || ''
   }
 
   hideComposition() {
     this.typeOn = false
-    $('#sime-composition').hide()
+    const el = document.getElementById('sime-composition')
+    if (el) {
+      el.style.display = 'none'
+    }
   }
 
   hideStatus() {
@@ -364,19 +378,22 @@ class SimpleIme {
   }
 
   highBack() {
-    $('.sime-cnd').removeClass('highlight')
-
-    $('.sime-cnd')
-      .eq(this.candIndex % 5)
-      .addClass('highlight')
-
+    const simeCndEls = document.querySelectorAll('.sime-cnd')
+    simeCndEls.forEach((el, i) => {
+      el.classList.remove('highlight')
+      if (i === this.candIndex % 5) {
+        el.classList.add('highlight')
+      }
+    })
+    const prevCandBtn = document.querySelector('.sime-prev-cand-button')
+    const nextCandBtn = document.querySelector('.sime-next-cand-button')
     this.candPage === 0
-      ? $('.sime-prev-cand-button').addClass('disabled')
-      : $('.sime-prev-cand-button').removeClass('disabled')
+      ? prevCandBtn?.classList.add('disabled')
+      : prevCandBtn?.classList.remove('disabled')
 
     5 * (this.candPage + 1) >= this.cands.length
-      ? $('.sime-next-cand-button').addClass('disabled')
-      : $('.sime-next-cand-button').removeClass('disabled')
+      ? nextCandBtn?.classList.add('disabled')
+      : nextCandBtn?.classList.remove('disabled')
   }
 
   init(options?: Options) {
@@ -402,13 +419,14 @@ class SimpleIme {
     )
     this.injectCSS()
     this.bindEvents()
-    const top = this.newIn.offset()?.top ?? 0
-    const left = this.newIn.offset()?.left ?? 0
-    const height = this.newIn.height() ?? 0
-    $('#sime-composition').css({
-      top: `${top + height}px`,
-      left: `${left}px`,
-    })
+    if (this.newIn) {
+      const { top, left, height } = this.newIn.getBoundingClientRect()
+      const el = document.getElementById('sime-composition')
+      if (el) {
+        el.style.top = `${top + height}px`
+        el.style.left = `${left}px`
+      }
+    }
   }
 
   nthCandidateExists(n: number) {
@@ -438,7 +456,7 @@ class SimpleIme {
       this.hideComposition()
       this.clearCandidate()
       this.cursorPosition = 0
-      dispatchCompositionEvent(this.newIn[0], 'compositionend', newText)
+      dispatchCompositionEvent(this.newIn, 'compositionend', newText)
     }
     else {
       if (this.options.cursorMode) {
@@ -450,14 +468,17 @@ class SimpleIme {
           this.cursorPosition,
         )
         this.cursorPosition = cursorPosition
-        $('#sime-predict').html(html)
+        const el = document.getElementById('sime-predict')
+        if (el) {
+          el.innerHTML = html
+        }
         newText = this.getPredictText()
       }
       else {
         this.setPredictText(newText)
       }
       this.fetchCandidateAsync()
-      dispatchCompositionEvent(this.newIn[0], 'compositionupdate', newText)
+      dispatchCompositionEvent(this.newIn, 'compositionupdate', newText)
     }
   }
 
@@ -470,27 +491,34 @@ class SimpleIme {
   }
 
   setPredictText(str: string) {
-    $('#sime-predict').text(str)
+    const el = document.getElementById('sime-predict')
+    if (el) {
+      el.innerText = str
+    }
   }
 
   showCandidates() {
-    const len = $('.sime-cnd').length
+    const nodes = document.querySelectorAll('.sime-cnd')
+    const len = nodes.length
     const m = (this.candPage + 1) * len - this.cands.length > 0 ? this.cands.length % len : len
     for (let i = 0; i < m; i++) {
       let str = ''
       str += `${i + 1}. `
       str += this.cands[i + this.candPage * 5]
-      $('.sime-cnd').eq(i).text(str)
+      nodes[i].innerHTML = str
     }
     for (let i = m; i < len; i++) {
-      $('.sime-cnd').eq(i).text('')
+      nodes[i].innerHTML = ''
     }
     this.highBack()
   }
 
   showComposition() {
     this.typeOn = true
-    $('#sime-composition').show()
+    const el = document.getElementById('sime-composition')
+    if (el) {
+      el.style.display = 'block'
+    }
   }
 
   showStatus() {
@@ -521,8 +549,10 @@ class SimpleIme {
       return
     }
     const html = generateTextByCursorPosition(text, this.cursorPosition)
-    $('#sime-predict').html(html)
-
+    const el = document.getElementById('sime-predict')
+    if (el) {
+      el.innerHTML = html
+    }
     this.fetchCandidateAsync()
   }
 
@@ -534,7 +564,10 @@ class SimpleIme {
       return
     }
     const html = generateTextByCursorPosition(text, this.cursorPosition)
-    $('#sime-predict').html(html)
+    const el = document.getElementById('sime-predict')
+    if (el) {
+      el.innerHTML = html
+    }
     this.fetchCandidateAsync()
   }
 
