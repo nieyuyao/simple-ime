@@ -220,7 +220,6 @@ class SimpleIme {
         this.fetchCandidateAsync()
       }
       else if (e.key === 'Enter') {
-        /* Enter键时候直接上屏preedit */
         if (this.typeOn) {
           e.preventDefault()
           this.commitText()
@@ -229,36 +228,30 @@ class SimpleIme {
         }
       }
       else if (/^[1-5]$/.test(e.key)) {
-        /* 1~5时选择对应的candidate */
         if (this.typeOn) {
           e.preventDefault()
           this.selectCandidate(+e.key)
         }
       }
       else if (e.key === ' ') {
-        /* 空格键时选择candIndex对应的candidate */
         if (this.typeOn) {
           e.preventDefault()
           this.selectCandidate((this.candIndex % 5) + 1)
         }
       }
       else if (e.key === '-') {
-        /* 输入-往前翻页 */
         e.preventDefault()
         this.candidatePageUp()
       }
       else if (e.key === '=') {
-        /* 输入=往后翻页 */
         e.preventDefault()
         this.candidatePageDown()
       }
       else if (e.key === '<') {
-        /* <选上一次词 */
         e.preventDefault()
         this.candidatePrev()
       }
       else if (e.key === '>') {
-        /* >选下一个词 */
         e.preventDefault()
         this.candidateNext()
       }
