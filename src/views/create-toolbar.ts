@@ -51,6 +51,8 @@ export function createToolbar(
     show() {
       toolbarEl.style.display = 'flex'
     },
-    dispose() {},
+    dispose() {
+      toolbarEl.remove()
+    },
   }
 }

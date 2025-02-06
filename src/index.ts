@@ -20,273 +20,293 @@ import { createToolbar } from './views/create-toolbar'
 const defaultOptions: Required<Options> = { singleQuoteDivide: true, cursorMode: false, maxPinyinLength: 128 }
 
 class SimpleIme {
-  candPage = 0
+  private candPage = 0
 
-  candIndex = 0
+  private candIndex = 0
 
-  cands: string[] = []
+  private cands: string[] = []
 
-  candsMatchLens: number[] = []
+  private candsMatchLens: number[] = []
 
-  chiMode = true
+  private chiMode = true
 
-  flag = false
+  private flag = false
 
-  method = 1
+  private method = 1
 
-  newIn = document.activeElement || document.body
+  private newIn = document.activeElement || document.body
 
-  punct = 0
+  private punct = 0
 
-  shape = 0
+  private shape = 0
 
-  isOn = false
+  private isOn = false
 
-  typeOn = false
+  private typeOn = false
 
-  originPinyin = ''
+  private originPinyin = ''
 
-  options: Required<Options>
+  private options: Required<Options>
 
   version = version
 
-  toolbarHandle: ReturnType<typeof createToolbar>
+  private toolbarHandle?: ReturnType<typeof createToolbar>
 
-  cursorPosition = 0
+  private inputViewHandle?: ReturnType<typeof createInputView>
 
-  injectCSS() {
+  private cursorPosition = 0
+
+  private injectedStyleEl?: HTMLStyleElement
+
+  private injectCSS() {
     const style = document.createElement('style')
     style.setAttribute('type', 'text/css')
     style.textContent = ImeCss
     document.head.append(style)
+    this.injectedStyleEl = style
   }
 
-  bindEvents() {
+  private bindEvents() {
     this.bindFocusEvent()
     this.bindKeyEvent()
   }
 
-  bindFocusEvent() {
+  private bindFocusEvent() {
     window.addEventListener(
       'focusin',
-      () => {
-        const activeElement = document.activeElement
-        if (activeElement && isEditableElement(activeElement)) {
-          this.flag = false
-          this.newIn = activeElement
-          const { top, left, height } = this.newIn.getBoundingClientRect()
-          const el = document.getElementById('sime-composition')
-          if (el) {
-            el.style.top = `${top + height}px`
-            el.style.left = `${left}px`
-          }
-          this.setPredictText('')
-          this.hideComposition()
-          this.clearCandidate()
-        }
-      },
+      this.handleFocusinEvent,
       { capture: true },
     )
     window.addEventListener(
       'focusout',
-      () => {
-        if (this.flag) {
-          this.flag = false
-        }
-        else {
-          this.setPredictText('')
-          this.hideComposition()
-          this.clearCandidate()
-        }
-      },
+      this.handleFocusoutEvent,
       { capture: true },
     )
   }
 
-  bindKeyEvent() {
+  private bindKeyEvent() {
     window.addEventListener(
       'keydown',
-      (e) => {
-        const { isOn, newIn, originPinyin } = this
-        if (!isOn || !newIn) {
-          return
-        }
-        if (this.chiMode && this.typeOn) {
-          if (e.key === 'Backspace') {
-            e.preventDefault()
-            const text = this.getPredictText()
-            if (hasChinese(text)) {
-              if (this.options.cursorMode) {
-                let chineseLen = 0
-                for (let i = 0; i < text.length; i++) {
-                  if (isLatin(text.charCodeAt(i))) {
-                    chineseLen = i
-                    break
-                  }
-                }
-                const { html, cursorPosition } = replaceTextAndUpdateCursorPosition(text, 0, chineseLen, originPinyin.substring(0, originPinyin.length - (text.length - chineseLen)), this.cursorPosition)
-                this.cursorPosition = cursorPosition
-                const el = document.getElementById('sime-predict')
-                if (el) {
-                  el.innerHTML = html
-                }
-              }
-              else {
-                this.setPredictText(originPinyin)
-              }
-              this.fetchCandidateAsync()
-              dispatchCompositionEvent(this.newIn, 'compositionupdate', text)
-              return
-            }
-            else {
-              if (this.options.cursorMode) {
-                const html = deleteCharAtCursorPosition(text, this.cursorPosition)
-                this.cursorPosition--
-                const el = document.getElementById('sime-predict')
-                if (el) {
-                  el.innerHTML = html
-                }
-              }
-              else {
-                this.setPredictText(text.substring(0, text.length - 1))
-              }
-              this.originPinyin = this.getPredictText()
-              if (text.length === 1) {
-                this.hideComposition()
-                this.clearCandidate()
-                this.cursorPosition = 0
-              }
-              else {
-                this.fetchCandidateAsync()
-              }
-            }
-            dispatchCompositionEvent(this.newIn, 'compositionupdate', this.getPredictText())
-          }
-          else if (e.code === 'Escape') {
-            this.setPredictText('')
-            this.cursorPosition = 0
-            this.hideComposition()
-            this.clearCandidate()
-          }
-          else if (e.key === 'ArrowUp') {
-            e.preventDefault()
-            this.candidatePageUp()
-          }
-          else if (e.key === 'ArrowDown') {
-            e.preventDefault()
-            this.candidatePageDown()
-          }
-          else if (e.key === 'ArrowLeft') {
-            e.preventDefault()
-            this.candidatePrev()
-          }
-          else if (e.key === 'ArrowRight') {
-            e.preventDefault()
-            this.candidateNext()
-          }
-        }
-      },
+      this.handleKeyDownEvent,
       { capture: true },
     )
 
     window.addEventListener(
       'keypress',
-      (e) => {
-        if (!this.isOn || !this.newIn) {
-          return
-        }
-        if (this.chiMode) {
-          if (/^[a-z']$/.test(e.key)) {
-            if (e.key === '\'' && (!this.options.singleQuoteDivide || !this.typeOn)) {
-              e.preventDefault()
-              return
-            }
-            e.preventDefault()
-            if (this.typeOn) {
-              dispatchCompositionEvent(this.newIn, 'compositionupdate', this.getPredictText())
-            }
-            else {
-              this.showComposition()
-              dispatchCompositionEvent(this.newIn, 'compositionstart', this.getPredictText())
-            }
-            const text = this.getPredictText()
-            if (this.options.cursorMode) {
-              const html = insertCharAtCursorPosition(text, e.key, this.cursorPosition)
-              const el = document.getElementById('sime-predict')
-              if (el) {
-                el.innerHTML = html
-              }
-            }
-            else {
-              this.setPredictText(text + e.key)
-            }
-            this.cursorPosition++
-            this.originPinyin += e.key
-            this.fetchCandidateAsync()
-          }
-          else if (e.key === 'Enter') {
-            /* Enter键时候直接上屏preedit */
-            if (this.typeOn) {
-              e.preventDefault()
-              this.commitText()
-              this.hideComposition()
-              this.clearCandidate()
-            }
-          }
-          else if (/^[1-5]$/.test(e.key)) {
-            /* 1~5时选择对应的candidate */
-            if (this.typeOn) {
-              e.preventDefault()
-              this.selectCandidate(+e.key)
-            }
-          }
-          else if (e.key === ' ') {
-            /* 空格键时选择candIndex对应的candidate */
-            if (this.typeOn) {
-              e.preventDefault()
-              this.selectCandidate((this.candIndex % 5) + 1)
-            }
-          }
-          else if (e.key === '-') {
-            /* 输入-往前翻页 */
-            e.preventDefault()
-            this.candidatePageUp()
-          }
-          else if (e.key === '=') {
-            /* 输入=往后翻页 */
-            e.preventDefault()
-            this.candidatePageDown()
-          }
-          else if (e.key === '<') {
-            /* <选上一次词 */
-            e.preventDefault()
-            this.candidatePrev()
-          }
-          else if (e.key === '>') {
-            /* >选下一个词 */
-            e.preventDefault()
-            this.candidateNext()
-          }
-          else if (e.key === '[') {
-            e.preventDefault()
-            this.moveCursorPositionLeft()
-          }
-          else if (e.key === ']') {
-            e.preventDefault()
-            this.moveCursorPositionRight()
-          }
-          else {
-            if (this.typeOn) {
-              e.preventDefault()
-            }
-          }
-        }
-      },
+      this.handleKeyPressEvent,
       { capture: true },
     )
   }
 
-  candidatePrev() {
+  private unbindEvents() {
+    window.removeEventListener('keydown', this.handleKeyDownEvent, { capture: true })
+    window.removeEventListener('keypress', this.handleKeyPressEvent, { capture: true })
+    window.removeEventListener('focusin', this.handleFocusinEvent, { capture: true })
+    window.removeEventListener('focusout', this.handleFocusoutEvent, { capture: true })
+  }
+
+  private handleKeyDownEvent = (e: KeyboardEvent) => {
+    const { isOn, newIn, originPinyin } = this
+    if (!isOn || !newIn) {
+      return
+    }
+    if (this.chiMode && this.typeOn) {
+      if (e.key === 'Backspace') {
+        e.preventDefault()
+        const text = this.getPredictText()
+        if (hasChinese(text)) {
+          if (this.options.cursorMode) {
+            let chineseLen = 0
+            for (let i = 0; i < text.length; i++) {
+              if (isLatin(text.charCodeAt(i))) {
+                chineseLen = i
+                break
+              }
+            }
+            const { html, cursorPosition } = replaceTextAndUpdateCursorPosition(text, 0, chineseLen, originPinyin.substring(0, originPinyin.length - (text.length - chineseLen)), this.cursorPosition)
+            this.cursorPosition = cursorPosition
+            const el = document.getElementById('sime-predict')
+            if (el) {
+              el.innerHTML = html
+            }
+          }
+          else {
+            this.setPredictText(originPinyin)
+          }
+          this.fetchCandidateAsync()
+          dispatchCompositionEvent(this.newIn, 'compositionupdate', text)
+          return
+        }
+        else {
+          if (this.options.cursorMode) {
+            const html = deleteCharAtCursorPosition(text, this.cursorPosition)
+            this.cursorPosition--
+            const el = document.getElementById('sime-predict')
+            if (el) {
+              el.innerHTML = html
+            }
+          }
+          else {
+            this.setPredictText(text.substring(0, text.length - 1))
+          }
+          this.originPinyin = this.getPredictText()
+          if (text.length === 1) {
+            this.hideComposition()
+            this.clearCandidate()
+            this.cursorPosition = 0
+          }
+          else {
+            this.fetchCandidateAsync()
+          }
+        }
+        dispatchCompositionEvent(this.newIn, 'compositionupdate', this.getPredictText())
+      }
+      else if (e.code === 'Escape') {
+        this.setPredictText('')
+        this.cursorPosition = 0
+        this.hideComposition()
+        this.clearCandidate()
+      }
+      else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        this.candidatePageUp()
+      }
+      else if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        this.candidatePageDown()
+      }
+      else if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        this.candidatePrev()
+      }
+      else if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        this.candidateNext()
+      }
+    }
+  }
+
+  private handleKeyPressEvent = (e: KeyboardEvent) => {
+    if (!this.isOn || !this.newIn) {
+      return
+    }
+    if (this.chiMode) {
+      if (/^[a-z']$/.test(e.key)) {
+        if (e.key === '\'' && (!this.options.singleQuoteDivide || !this.typeOn)) {
+          e.preventDefault()
+          return
+        }
+        e.preventDefault()
+        if (this.typeOn) {
+          dispatchCompositionEvent(this.newIn, 'compositionupdate', this.getPredictText())
+        }
+        else {
+          this.showComposition()
+          dispatchCompositionEvent(this.newIn, 'compositionstart', this.getPredictText())
+        }
+        const text = this.getPredictText()
+        if (this.options.cursorMode) {
+          const html = insertCharAtCursorPosition(text, e.key, this.cursorPosition)
+          const el = document.getElementById('sime-predict')
+          if (el) {
+            el.innerHTML = html
+          }
+        }
+        else {
+          this.setPredictText(text + e.key)
+        }
+        this.cursorPosition++
+        this.originPinyin += e.key
+        this.fetchCandidateAsync()
+      }
+      else if (e.key === 'Enter') {
+        /* Enter键时候直接上屏preedit */
+        if (this.typeOn) {
+          e.preventDefault()
+          this.commitText()
+          this.hideComposition()
+          this.clearCandidate()
+        }
+      }
+      else if (/^[1-5]$/.test(e.key)) {
+        /* 1~5时选择对应的candidate */
+        if (this.typeOn) {
+          e.preventDefault()
+          this.selectCandidate(+e.key)
+        }
+      }
+      else if (e.key === ' ') {
+        /* 空格键时选择candIndex对应的candidate */
+        if (this.typeOn) {
+          e.preventDefault()
+          this.selectCandidate((this.candIndex % 5) + 1)
+        }
+      }
+      else if (e.key === '-') {
+        /* 输入-往前翻页 */
+        e.preventDefault()
+        this.candidatePageUp()
+      }
+      else if (e.key === '=') {
+        /* 输入=往后翻页 */
+        e.preventDefault()
+        this.candidatePageDown()
+      }
+      else if (e.key === '<') {
+        /* <选上一次词 */
+        e.preventDefault()
+        this.candidatePrev()
+      }
+      else if (e.key === '>') {
+        /* >选下一个词 */
+        e.preventDefault()
+        this.candidateNext()
+      }
+      else if (e.key === '[') {
+        e.preventDefault()
+        this.moveCursorPositionLeft()
+      }
+      else if (e.key === ']') {
+        e.preventDefault()
+        this.moveCursorPositionRight()
+      }
+      else {
+        if (this.typeOn) {
+          e.preventDefault()
+        }
+      }
+    }
+  }
+
+  private handleFocusinEvent = () => {
+    const activeElement = document.activeElement
+    if (activeElement && isEditableElement(activeElement)) {
+      this.flag = false
+      this.newIn = activeElement
+      const { top, left, height } = this.newIn.getBoundingClientRect()
+      const el = document.getElementById('sime-composition')
+      if (el) {
+        el.style.top = `${top + height}px`
+        el.style.left = `${left}px`
+      }
+      this.setPredictText('')
+      this.hideComposition()
+      this.clearCandidate()
+    }
+  }
+
+  private handleFocusoutEvent = () => {
+    if (this.flag) {
+      this.flag = false
+    }
+    else {
+      this.setPredictText('')
+      this.hideComposition()
+      this.clearCandidate()
+    }
+  }
+
+  private candidatePrev() {
     this.candIndex = this.candIndex - 1 >= 0 ? this.candIndex - 1 : 0
     if (this.candIndex % 5 === 4) {
       this.candPage = this.candPage - 1 >= 0 ? this.candPage - 1 : 0
@@ -294,7 +314,7 @@ class SimpleIme {
     this.showCandidates()
   }
 
-  candidateNext() {
+  private candidateNext() {
     this.candIndex
       = this.candIndex + 1 <= this.cands.length - 1 ? this.candIndex + 1 : this.cands.length - 1
     if (this.candIndex % 5 === 0) {
@@ -306,13 +326,13 @@ class SimpleIme {
     this.showCandidates()
   }
 
-  candidatePageUp() {
+  private candidatePageUp() {
     this.candIndex = this.candPage - 1 >= 0 ? this.candIndex - 5 : this.candIndex
     this.candPage = this.candPage - 1 >= 0 ? this.candPage - 1 : 0
     this.showCandidates()
   }
 
-  candidatePageDown() {
+  private candidatePageDown() {
     this.candIndex = this.candPage + 1 < this.cands.length / 5 ? this.candIndex + 5 : this.candIndex
     this.candPage
       = this.candPage + 1 < this.cands.length / 5
@@ -321,14 +341,14 @@ class SimpleIme {
     this.showCandidates()
   }
 
-  clearCandidate() {
+  private clearCandidate() {
     this.candPage = 0
     this.candIndex = 0
     this.cands = []
     this.candsMatchLens = []
   }
 
-  commitText() {
+  private commitText() {
     const str = this.getPredictText()
     updateContent(this.newIn, str)
     dispatchInputEvent(this.newIn, 'input')
@@ -336,7 +356,7 @@ class SimpleIme {
     this.setPredictText('')
   }
 
-  fetchCandidateAsync() {
+  private fetchCandidateAsync() {
     this.clearCandidate()
     const text = this.getPredictText()
     const { pinyin, quotes } = this.options.cursorMode ? findConvertPinyinByCursorPosition(text, this.cursorPosition) : findNextConvertPinyin(text)
@@ -352,20 +372,20 @@ class SimpleIme {
     this.showCandidates()
   }
 
-  getNthCandidate(n: number) {
+  private getNthCandidate(n: number) {
     return this.cands[5 * this.candPage + n - 1]
   }
 
-  getNthMatchLen(n: number) {
+  private getNthMatchLen(n: number) {
     return this.candsMatchLens[5 * this.candPage + n - 1]
   }
 
-  getPredictText() {
+  private getPredictText() {
     const el = document.getElementById('sime-predict')
     return el?.innerText || ''
   }
 
-  hideComposition() {
+  private hideComposition() {
     this.typeOn = false
     const el = document.getElementById('sime-composition')
     if (el) {
@@ -373,11 +393,11 @@ class SimpleIme {
     }
   }
 
-  hideStatus() {
-    this.toolbarHandle.hide()
+  private hideStatus() {
+    this.toolbarHandle?.hide()
   }
 
-  highBack() {
+  private highBack() {
     const simeCndEls = document.querySelectorAll('.sime-cnd')
     simeCndEls.forEach((el, i) => {
       el.classList.remove('highlight')
@@ -396,44 +416,11 @@ class SimpleIme {
       : nextCandBtn?.classList.remove('disabled')
   }
 
-  init(options?: Options) {
-    this.options = { ...defaultOptions, ...options }
-    this.toolbarHandle = createToolbar(this.switchMethod, this.switchShape, this.switchMethod)
-    if (!this.isOn) {
-      this.toolbarHandle.hide()
-    }
-    createInputView(
-      (e, index) => {
-        e.preventDefault()
-        this.selectCandidate(index + 1)
-        this.flag = true
-      },
-      (e) => {
-        e.preventDefault()
-        this.candidatePageUp()
-      },
-      (e) => {
-        e.preventDefault()
-        this.candidatePageDown()
-      },
-    )
-    this.injectCSS()
-    this.bindEvents()
-    if (this.newIn) {
-      const { top, left, height } = this.newIn.getBoundingClientRect()
-      const el = document.getElementById('sime-composition')
-      if (el) {
-        el.style.top = `${top + height}px`
-        el.style.left = `${left}px`
-      }
-    }
-  }
-
-  nthCandidateExists(n: number) {
+  private nthCandidateExists(n: number) {
     return 5 * this.candPage + n - 1 < this.cands.length
   }
 
-  selectCandidate(selection: number) {
+  private selectCandidate(selection: number) {
     if (!this.nthCandidateExists(selection)) {
       return
     }
@@ -482,22 +469,22 @@ class SimpleIme {
     }
   }
 
-  setCandidates(candidates: string[]) {
+  private setCandidates(candidates: string[]) {
     this.cands = candidates
   }
 
-  setMatchLens(match_lens: number[]) {
+  private setMatchLens(match_lens: number[]) {
     this.candsMatchLens = match_lens
   }
 
-  setPredictText(str: string) {
+  private setPredictText(str: string) {
     const el = document.getElementById('sime-predict')
     if (el) {
       el.innerText = str
     }
   }
 
-  showCandidates() {
+  private showCandidates() {
     const nodes = document.querySelectorAll('.sime-cnd')
     const len = nodes.length
     const m = (this.candPage + 1) * len - this.cands.length > 0 ? this.cands.length % len : len
@@ -513,7 +500,7 @@ class SimpleIme {
     this.highBack()
   }
 
-  showComposition() {
+  private showComposition() {
     this.typeOn = true
     const el = document.getElementById('sime-composition')
     if (el) {
@@ -521,24 +508,24 @@ class SimpleIme {
     }
   }
 
-  showStatus() {
-    this.toolbarHandle.show()
+  private showStatus() {
+    this.toolbarHandle?.show()
   }
 
-  switchMethod = () => {
+  private switchMethod = () => {
     this.method = (this.method + 1) % 2
     this.chiMode = this.method === 1
   }
 
-  switchShape = () => {
+  private switchShape = () => {
     this.shape = (this.shape + 1) % 2
   }
 
-  switchPunct = () => {
+  private switchPunct = () => {
     this.punct = (this.punct + 1) % 2
   }
 
-  moveCursorPositionLeft() {
+  private moveCursorPositionLeft() {
     if (this.cursorPosition - 1 < 0) {
       return
     }
@@ -556,7 +543,7 @@ class SimpleIme {
     this.fetchCandidateAsync()
   }
 
-  moveCursorPositionRight() {
+  private moveCursorPositionRight() {
     const text = this.getPredictText()
     const oldCursorPosition = this.cursorPosition
     this.cursorPosition = moveCursorPositionRight(text, oldCursorPosition)
@@ -571,6 +558,39 @@ class SimpleIme {
     this.fetchCandidateAsync()
   }
 
+  init(options?: Options) {
+    this.options = { ...defaultOptions, ...options }
+    this.toolbarHandle = createToolbar(this.switchMethod, this.switchShape, this.switchPunct)
+    if (!this.isOn) {
+      this.toolbarHandle.hide()
+    }
+    this.inputViewHandle = createInputView(
+      (e, index) => {
+        e.preventDefault()
+        this.selectCandidate(index + 1)
+        this.flag = true
+      },
+      (e) => {
+        e.preventDefault()
+        this.candidatePageUp()
+      },
+      (e) => {
+        e.preventDefault()
+        this.candidatePageDown()
+      },
+    )
+    this.injectCSS()
+    this.bindEvents()
+    if (this.newIn) {
+      const { top, left, height } = this.newIn.getBoundingClientRect()
+      const el = document.getElementById('sime-composition')
+      if (el) {
+        el.style.top = `${top + height}px`
+        el.style.left = `${left}px`
+      }
+    }
+  }
+
   toggleOnOff() {
     this.isOn = !this.isOn
     this.isOn ? this.turnOn() : this.turnOff()
@@ -578,7 +598,8 @@ class SimpleIme {
 
   turnOn() {
     this.isOn = true
-    this.toolbarHandle.show()
+    this.toolbarHandle?.show()
+    this.showStatus()
   }
 
   turnOff() {
@@ -591,7 +612,10 @@ class SimpleIme {
   }
 
   dispose() {
-    // TODO:
+    this.toolbarHandle?.dispose()
+    this.inputViewHandle?.dispose()
+    this.injectedStyleEl?.remove()
+    this.unbindEvents()
   }
 }
 

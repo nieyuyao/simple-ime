@@ -28,6 +28,8 @@ export function createInputView(
   document.body.append(tableEl)
 
   return {
-    dispose() {},
+    dispose() {
+      tableEl.remove()
+    },
   }
 }
