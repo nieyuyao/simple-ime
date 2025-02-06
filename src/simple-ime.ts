@@ -1,4 +1,3 @@
-import type { Options } from './types'
 import { version } from '../package.json'
 import { getCandidates } from './engine'
 import { handleBackspace } from './handlers/backspace'
@@ -16,10 +15,6 @@ import { dispatchCompositionEvent, dispatchInputEvent } from './utils/event'
 import { hasChinese, isLatin, lengthChinese } from './utils/pinyin'
 import { createInputView } from './views/create-input-view'
 import { createToolbar } from './views/create-toolbar'
-
-const defaultOptions: Required<Options> = {
-  maxPinyinLength: 128,
-}
 
 export class SimpleIme {
   version = version
@@ -53,8 +48,6 @@ export class SimpleIme {
   private typeOn = false
 
   private originPinyin = ''
-
-  private options: Required<Options>
 
   private toolbarHandle?: ReturnType<typeof createToolbar>
 
@@ -503,9 +496,7 @@ export class SimpleIme {
     this.fetchCandidateAsync()
   }
 
-  init(options?: Options) {
-    this.options = { ...defaultOptions, ...options }
-    console.log(this.options)
+  init() {
     this.toolbarHandle = createToolbar(this.switchMethod, this.switchShape, this.switchPunct)
     if (!this.isOn) {
       this.toolbarHandle.hide()

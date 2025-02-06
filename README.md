@@ -1,5 +1,5 @@
 # Simple Ime
-An browser plugin to use Chinese Pinyin Input Method.
+An simple browser tool to use Chinese Pinyin Input Method (IME).
 
 #### Development
 

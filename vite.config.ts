@@ -25,7 +25,10 @@ export default defineConfig({
     // sourcemap: true,
   },
   plugins: [
-    dts(),
+    dts({
+      outDir: './dist',
+      exclude: ['example/**/*', 'scripts/**/*'],
+    }),
     svgLoader({
       svgo: true,
       defaultImport: 'url',
