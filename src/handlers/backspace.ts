@@ -10,19 +10,17 @@ export function handleBackspace(text: string, originPinyin: string, cursorPositi
         break
       }
     }
-    const { html, cursorPosition } = replaceTextAndUpdateCursorPosition(
+    const { html, cursorPosition: newCursorPosition } = replaceTextAndUpdateCursorPosition(
       text,
       0,
       chineseLen,
       originPinyin.substring(0, originPinyin.length - (text.length - chineseLen)),
-      this.cursorPosition,
+      cursorPosition,
     )
-    return { html, cursorPosition }
+    return { html, newCursorPosition }
   }
   else {
     const html = deleteCharAtCursorPosition(text, cursorPosition)
-    this.cursorPosition--
-    this.setPredictText(html)
-    return { html, cursorPosition: cursorPosition - 1 }
+    return { html, newCursorPosition: cursorPosition - 1 }
   }
 }

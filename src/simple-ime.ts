@@ -99,16 +99,16 @@ export class SimpleIme {
       e.preventDefault()
       const text = this.getPredictText()
       const includeCh = hasChinese(text)
-      const { html, cursorPosition } = handleBackspace(text, originPinyin, this.cursorPosition)
+      const { html, newCursorPosition } = handleBackspace(text, originPinyin, this.cursorPosition)
       if (includeCh) {
-        this.cursorPosition = cursorPosition
+        this.cursorPosition = newCursorPosition
         this.setPredictText(html)
         this.fetchCandidateAsync()
         dispatchCompositionEvent(this.newIn, 'compositionupdate', text)
         return
       }
       else {
-        this.cursorPosition = cursorPosition
+        this.cursorPosition = newCursorPosition
         this.setPredictText(html)
         this.originPinyin = this.getPredictText()
         if (text.length === 1) {

@@ -62,5 +62,9 @@ export function getCandidates(pinyin: string): [string[], number[]] {
   const list = lookupCandidates(pinyin)
   const candidates = list.map(item => item.w)
   const matchLens = list.map(item => item.matchLen)
+  if (candidates.length <= 0) {
+    candidates.push(pinyin, pinyin.toUpperCase())
+    matchLens.push(pinyin.length, pinyin.length)
+  }
   return [candidates, matchLens]
 }
