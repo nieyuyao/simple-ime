@@ -20,9 +20,22 @@ export function isChinese(code: number) {
 
 export function hasChinese(str: string) {
   for (let i = 0; i < str.length; i++) {
-    if (!isLatin(str.charCodeAt(i))) {
+    if (isChinese(str.charCodeAt(i))) {
       return true
     }
   }
   return false
+}
+
+export function lengthChinese(str: string) {
+  let length = 0
+  for (let i = 0; i < str.length; i++) {
+    if (isChinese(str.charCodeAt(i))) {
+      length++
+    }
+    else {
+      return length
+    }
+  }
+  return length
 }

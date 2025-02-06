@@ -35,7 +35,7 @@ function lookupCandidates(pinyin: string): ResultList {
         if (!dict[key]) {
           return
         }
-        splitDictContent(dict[key], list, pinyin.length)
+        splitDictContent(dict[key], list, Math.min(pinyin.length, key.length))
       })
     }
 

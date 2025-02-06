@@ -88,16 +88,8 @@ export function moveCursorPositionRight(text: string, cursorPosition: number): n
   return cursorPosition + 1
 }
 
-/**
- * @example ni|hao => ni
- * @example ni'|hao => ni'
- * @example ni''|hao => ni''
- * @example 你''''|hao => ''''hao
- * @example 你''''|hao'le => ''''hao'
- * @example 你zen|''hao'le => ''''hao'
- */
 export function findConvertPinyinByCursorPosition(text: string, cursorPosition: number): {
-  quotes: number
+  origin: string
   pinyin: string
 } {
   let lastChineseIdx = -1
@@ -109,27 +101,14 @@ export function findConvertPinyinByCursorPosition(text: string, cursorPosition: 
       break
     }
   }
+  const quote = '\''
   let prefixQuotes = 0
   let suffixQuotes = 0
   let pinyin = ''
-  for (let i = lastChineseIdx + 1; i < cursorPosition; i++) {
-    const c = text.charAt(i)
-    if (c !== '\'') {
-      pinyin += c
+  for (let i = lastChineseIdx + 1; i < text.length; i++) {
+    if (i === cursorPosition && pinyin) {
+      break
     }
-    else if (pinyin) {
-      suffixQuotes++
-    }
-    else {
-      prefixQuotes++
-    }
-  }
-
-  if (pinyin) {
-    return { quotes: prefixQuotes + suffixQuotes, pinyin }
-  }
-
-  for (let i = cursorPosition; i < text.length; i++) {
     const c = text.charAt(i)
     if (c !== '\'') {
       if (suffixQuotes) {
@@ -144,5 +123,5 @@ export function findConvertPinyinByCursorPosition(text: string, cursorPosition: 
       prefixQuotes++
     }
   }
-  return { quotes: prefixQuotes + suffixQuotes, pinyin }
+  return { origin: `${quote.repeat(prefixQuotes)}${pinyin}${quote.repeat(suffixQuotes)}`, pinyin }
 }
