@@ -1,4 +1,4 @@
-import type { Options } from './options'
+import type { Options } from './types'
 import { version } from '../package.json'
 import { getCandidates } from './engine'
 import { handleBackspace } from './handlers/backspace'
@@ -489,6 +489,7 @@ export class SimpleIme {
 
   init(options?: Options) {
     this.options = { ...defaultOptions, ...options }
+    console.log(this.options)
     this.toolbarHandle = createToolbar(this.switchMethod, this.switchShape, this.switchPunct)
     if (!this.isOn) {
       this.toolbarHandle.hide()

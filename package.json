@@ -8,10 +8,17 @@
   "repository": {
     "url": "https://github.com/nieyuyao/simple-ime.git"
   },
-  "main": "index.js",
+  "main": "./dist/simple-ime.js",
+  "module": "./dist/simple-ime.es.js",
+  "unpkg": "./dist/simple-ime.umd.js",
+  "iife": "./dist/simple-ime.global.js",
+  "files": [
+    "dist",
+    "example"
+  ],
   "scripts": {
     "dev": "vite example --force",
-    "build:global": "vite build",
+    "build": "vite build --mode lib && vite build",
     "test": "vitest",
     "compressDict": "node --loader ts-node/esm --no-warnings=ExperimentalWarning scripts/compress-dict.ts"
   },
@@ -27,6 +34,7 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3",
     "vite": "^6.0.7",
+    "vite-plugin-dts": "^3.9.1",
     "vite-svg-loader": "^5.1.0",
     "vitest": "^3.0.4",
     "vue": "^3.5.13",
