@@ -103,6 +103,7 @@ it('moveCursorPositionRight', () => {
 
 it('findNextConvertPinyinByCursorPosition', () => {
   expect(findConvertPinyinByCursorPosition('nihao', 2)).toEqual({ quotes: 0, pinyin: 'ni' })
+  expect(findConvertPinyinByCursorPosition('ni\'hao', 2)).toEqual({ pinyin: 'ni', quotes: 0 })
   expect(findConvertPinyinByCursorPosition('ni\'hao', 3)).toEqual({ pinyin: 'ni', quotes: 1 })
   expect(findConvertPinyinByCursorPosition('ni\'\'hao', 4)).toEqual({ pinyin: 'ni', quotes: 2 })
   expect(findConvertPinyinByCursorPosition('你\'\'hao', 3)).toEqual({ quotes: 2, pinyin: 'hao' })
