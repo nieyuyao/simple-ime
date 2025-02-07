@@ -88,8 +88,18 @@ export class SimpleIme {
   }
 
   private handleKeyDownEvent = (e: KeyboardEvent) => {
-    const { isOn, newIn, originPinyin, typeOn, chiMode } = this
-    if (!isOn || !newIn || !chiMode || !typeOn) {
+    const { isOn, newIn, originPinyin } = this
+    if (!isOn || !newIn) {
+      return
+    }
+
+    if (e.key === 'Shift') {
+      e.preventDefault()
+      this.switchMethod()
+      return
+    }
+
+    if (!this.chiMode || !this.typeOn) {
       return
     }
     if (e.key === 'Backspace') {
@@ -459,6 +469,13 @@ export class SimpleIme {
   private switchMethod = () => {
     this.method = (this.method + 1) % 2
     this.chiMode = this.method === 1
+    this.toolbarHandle?.updateMethodIcon()
+    if (!this.chiMode) {
+      this.setPredictText('')
+      this.hideComposition()
+      this.clearCandidate()
+      this.cursorPosition = 0
+    }
   }
 
   private switchShape = () => {
