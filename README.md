@@ -1,4 +1,9 @@
 # Simple Ime
+
+![CI](https://github.com/nieyuyao/simple-ime/workflows/CI/badge.svg)
+![latest tag](https://badgen.net/github/release/nieyuyao/simple-ime)
+![npm](https://img.shields.io/npm/v/simple-ime.svg)
+
 An simple browser tool to use Chinese Pinyin Input Method (IME).
 
 <img src="./public/demo.png" width="240" />
