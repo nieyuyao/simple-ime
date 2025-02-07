@@ -69,8 +69,13 @@ Destroy the ime instance.
 
 Run `npm run dev` and then open browser.
 
-# Building
+# Build
 
 ```shell
 npm run build
 ```
+
+# Credits
+
+- The frontend part of the implementation is heavily inspired by [CloudInput](https://github.com/mzhangdev/CloudInput).
+- Thanks to [web-pinyin-ime](https://github.com/dongyuwei/web-pinyin-ime) for algorithm of generating candidate words.
