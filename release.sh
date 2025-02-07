@@ -1,4 +1,4 @@
-echo -e "registry=https://registry.npmjs.org/\n_authToken=$NPM_AUTH_TOKEN" > .npmrc
+npm set //registry.npmjs.org/:_authToken=$NPM_AUTH_TOKEN
 
 
 # get the version
