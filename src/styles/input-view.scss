@@ -9,6 +9,7 @@
   background: #fff;
   box-shadow: 0px 3px 4px 0px rgba(37, 56, 108, 0.08),0px 0px 20px 0px rgba(49, 70, 125, 0.12);
   z-index: 987654321;
+  overflow: hidden;
 }
 
 #sime-predict {
@@ -38,6 +39,7 @@
   font-size: 14px;
   color: #252D4D;
   vertical-align: middle;
+  white-space: nowrap;
 
   &.highlight {
     color: #356DEE;
