@@ -533,7 +533,7 @@ export class SimpleIme {
           }
           let newLeft = Math.max(left, 0) + paddingLeft
           let newTop = top + height + paddingTop
-          newLeft = newLeft + elWidth >= winWidth ?  Math.max(winWidth - elWidth - paddingLeft) : Math.max(left, 0) + paddingLeft
+          newLeft = newLeft + elWidth >= winWidth ? Math.max(winWidth - elWidth - paddingLeft) : Math.max(left, 0) + paddingLeft
           newTop = newTop + elHeight >= winHeight ? Math.max(top - paddingTop - elHeight, 0) : newTop
           el.style.top = `${newTop}px`
           el.style.left = `${newLeft}px`
