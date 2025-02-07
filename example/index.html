@@ -2,56 +2,13 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Cloud Input Test</title>
+    <title>Simple Ime Test</title>
     <script>
       window.setInterval = () => {}
     </script>
   </head>
   <body>
-    <p>
-      Input:
-      <input type="text" id="input1"/>
-      <input type="text" />
-      <input type="text" />
-    </p>
-    <p>
-      Textarea:
-      <textarea rows="10" cols="30"></textarea>
-      <textarea rows="10" cols="30"></textarea>
-    </p>
-    <p>
-      ContentEditable:
-      <div contenteditable="true" style="width: 200px; height: 200px;border: 1px solid #ccc; display: inline-block;"></div>
-      <div contenteditable="true" style="width: 200px; height: 200px;border: 1px solid #ccc; display: inline-block;"></div>
-    </p>
-
-    <p>
-      Iframe
-      <iframe></iframe>
-      <!-- <iframe></iframe> -->
-    </p>
+    <div id="app"></div>
   </body>
-  <script>
-    const frames = document.getElementsByTagName("iframe")
-    for (let i = 0; i < frames.length; i++) {
-      frames[i].contentDocument.designMode = "on";
-    }
-
-    setTimeout(() => {
-      const iframe = document.createElement('iframe')
-      document.body.append(iframe)
-      iframe.contentDocument.designMode = "on";
-    }, 10000)
-    document.getElementById('input1').addEventListener('compositionstart', (event) => {
-      console.log(event, '=====compositionstart===')
-    })
-    document.getElementById('input1').addEventListener('compositionupdate', (event) => {
-      console.log(event, '=====compositionupdate===')
-    })
-    document.getElementById('input1').addEventListener('compositionend', (event) => {
-      console.log(event, '====compositionend===')
-    })
-  </script>
-    <!-- ime engine -->
-    <script type="module" src="./main.ts"></script>
+  <script type="module" src="./main.ts"></script>
 </html>

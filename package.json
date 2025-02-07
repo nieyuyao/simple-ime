@@ -1,23 +1,44 @@
 {
-  "name": "cloudinput",
+  "name": "simple-ime",
+  "type": "module",
   "version": "1.0.0",
-  "description": "An browser plugin to use Chinese Pinyin Input Method.",
-  "main": "index.js",
-  "scripts": {
-    "dev": "vite example",
-    "build:ime": "vite build"
-  },
-  "author": "nieyuyao",
+  "description": "An simple browser tool to use Chinese Pinyin Input Method (IME).",
+  "author": "nieyuyao <nieyuyao0826@hotmail.com>",
   "license": "MIT",
+  "repository": {
+    "url": "https://github.com/nieyuyao/simple-ime.git"
+  },
+  "main": "./dist/simple-ime.js",
+  "module": "./dist/simple-ime.es.js",
+  "unpkg": "./dist/simple-ime.umd.js",
+  "iife": "./dist/simple-ime.global.js",
+  "types": "./dist/src/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite example --force",
+    "build": "vite build",
+    "test": "vitest",
+    "compressDict": "node --loader ts-node/esm --no-warnings=ExperimentalWarning scripts/compress-dict.ts",
+    "release": "bash ./release.sh"
+  },
   "dependencies": {
-    "dawg-lookup": "^2.2.1",
-    "jquery": "^3.7.1",
-    "lodash": "^4.17.21",
-    "lodash-es": "^4.17.21"
+    "dawg-lookup": "^2.2.1"
   },
   "devDependencies": {
+    "@antfu/eslint-config": "^3.15.0",
     "@types/jquery": "^3.5.32",
+    "@types/node": "^22.10.7",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "sass": "^1.83.4",
+    "ts-node": "^10.9.2",
     "typescript": "^5.7.3",
-    "vite": "^6.0.7"
+    "vite": "^6.0.7",
+    "vite-plugin-dts": "^3.9.1",
+    "vite-svg-loader": "^5.1.0",
+    "vitest": "^3.0.4",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
   }
 }

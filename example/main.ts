@@ -1,4 +1,8 @@
-import '../src/cloud_input'
+import { createApp } from 'vue'
+import { createSimpleIme } from '../src'
+import App from './App.vue'
+import router from './router'
 
-window.CloudInput.init()
-window.CloudInput.turnOn()
+createApp(App).use(router).mount('#app')
+
+createSimpleIme().turnOn()
