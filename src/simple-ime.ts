@@ -57,6 +57,10 @@ export class SimpleIme {
 
   private injectedStyleEl?: HTMLStyleElement
 
+  private adjustCompositionElTimeoutId = 0
+
+  private compositionElSize = { width: 0, height: 0 }
+
   private injectCSS() {
     const style = document.createElement('style')
     style.setAttribute('type', 'text/css')
@@ -103,7 +107,6 @@ export class SimpleIme {
         this.fetchCandidateAsync()
         this.accMatchedPinyin = ''
         dispatchCompositionEvent(this.newIn, 'compositionupdate', this.getPredictText())
-        return
       }
       else {
         this.cursorPosition = newCursorPosition
@@ -117,8 +120,9 @@ export class SimpleIme {
         else {
           this.fetchCandidateAsync()
         }
+        dispatchCompositionEvent(this.newIn, 'compositionupdate', this.getPredictText())
       }
-      dispatchCompositionEvent(this.newIn, 'compositionupdate', this.getPredictText())
+      this.updateCompositionPosition()
     }
     else if (e.code === 'Escape') {
       this.setPredictText('')
@@ -170,6 +174,7 @@ export class SimpleIme {
         this.showComposition()
         dispatchCompositionEvent(this.newIn, 'compositionstart', newText)
       }
+      this.updateCompositionPosition()
     }
     else if (e.key === 'Enter') {
       if (this.typeOn) {
@@ -227,12 +232,7 @@ export class SimpleIme {
     if (activeElement && isEditableElement(activeElement)) {
       this.flag = false
       this.newIn = activeElement
-      const { top, left, height } = this.newIn.getBoundingClientRect()
-      const el = document.getElementById('sime-composition')
-      if (el) {
-        el.style.top = `${top + height}px`
-        el.style.left = `${left}px`
-      }
+      this.updateCompositionPosition()
       this.setPredictText('')
       this.hideComposition()
       this.clearCandidate()
@@ -482,6 +482,7 @@ export class SimpleIme {
     const html = generateTextByCursorPosition(text, this.cursorPosition)
     this.setPredictText(html)
     this.fetchCandidateAsync()
+    this.updateCompositionPosition()
   }
 
   private moveCursorPositionRight() {
@@ -494,6 +495,36 @@ export class SimpleIme {
     const html = generateTextByCursorPosition(text, this.cursorPosition)
     this.setPredictText(html)
     this.fetchCandidateAsync()
+    this.updateCompositionPosition()
+  }
+
+  private updateCompositionPosition() {
+    window.clearTimeout(this.adjustCompositionElTimeoutId)
+    this.adjustCompositionElTimeoutId = window.setTimeout(() => {
+      if (this.newIn) {
+        const el = document.getElementById('sime-composition')
+        if (el) {
+          const { top, left, height } = this.newIn.getBoundingClientRect()
+          const winWidth = window.innerWidth
+          const winHeight = window.innerHeight
+          const elWidth = el.clientWidth
+          const elHeight = el.clientHeight
+          const paddingLeft = 20
+          const paddingTop = 20
+          if (this.compositionElSize.width === elWidth && this.compositionElSize.height === elHeight) {
+            return
+          }
+          let newLeft = Math.max(left, 0) + paddingLeft
+          let newTop = top + height + paddingTop
+          newLeft = newLeft + elWidth >= winWidth ?  Math.max(winWidth - elWidth - paddingLeft) : Math.max(left, 0) + paddingLeft
+          newTop = newTop + elHeight >= winHeight ? Math.max(top - paddingTop - elHeight, 0) : newTop
+          el.style.top = `${newTop}px`
+          el.style.left = `${newLeft}px`
+          this.compositionElSize = { width: elWidth, height: elHeight }
+          this.updateCompositionPosition()
+        }
+      }
+    }, 0)
   }
 
   init() {
@@ -518,14 +549,6 @@ export class SimpleIme {
     )
     this.injectCSS()
     this.bindEvents()
-    if (this.newIn) {
-      const { top, left, height } = this.newIn.getBoundingClientRect()
-      const el = document.getElementById('sime-composition')
-      if (el) {
-        el.style.top = `${top + height}px`
-        el.style.left = `${left}px`
-      }
-    }
   }
 
   toggleOnOff() {
