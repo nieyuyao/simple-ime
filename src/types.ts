@@ -2,9 +2,6 @@ export interface SimpleImeInstance {
   /** 输入法版本号 */
   version: string
 
-  /** 初始化输入法 */
-  init: () => void
-
   /** 切换输入法开关状态 */
   toggleOnOff: () => void
 
