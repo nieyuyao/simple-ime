@@ -7,9 +7,9 @@ import semiChIcon from '../img/semi-zh.png?inline'
 import toolbarContentHtml from './toolbar.html?raw'
 
 export function createToolbar(
-  switchMethod: (event: Event) => void,
-  switchShape: (event: Event) => void,
-  switchPunct: (event: Event) => void,
+  onMethodChange: (e: MouseEvent) => void,
+  onShapeChange: (e: MouseEvent) => void,
+  onPunctChange: (e: MouseEvent) => void,
 ) {
   const toolbarEl = document.createElement('div')
   toolbarEl.id = 'sime-toolbar'
@@ -28,9 +28,9 @@ export function createToolbar(
   const toolbarIconEls = (toolbarEl.querySelectorAll<HTMLImageElement>('.sime-toolbar-icon'))
 
   const callbacks = [
-    switchMethod,
-    switchShape,
-    switchPunct,
+    onMethodChange,
+    onShapeChange,
+    onPunctChange,
   ]
   toolbarIconEls.forEach((el, i) => {
     el.addEventListener('click', (event) => {
@@ -45,14 +45,14 @@ export function createToolbar(
   document.body.append(toolbarEl)
 
   return {
-    hide() {
-      toolbarEl.style.display = 'none'
-    },
-    show() {
-      toolbarEl.style.display = 'flex'
-    },
-    dispose() {
-      toolbarEl.remove()
+    hide: () => toolbarEl.style.display = 'none',
+    show: () => toolbarEl.style.display = 'flex',
+    dispose: () => toolbarEl.remove(),
+    updateMethodIcon: () => {
+      const methodIconEl = toolbarIconEls[0]
+      const idx = (currentIconIndexes[0] + 1) % 2
+      currentIconIndexes[0] = idx
+      methodIconEl.src = icons[0][idx]
     },
   }
 }
