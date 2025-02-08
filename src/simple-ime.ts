@@ -14,7 +14,7 @@ import { isEditableElement, updateContent } from './utils/dom'
 import { dispatchCompositionEvent, dispatchInputEvent } from './utils/event'
 import { hasChinese, isLatin, lengthChinese } from './utils/pinyin'
 import { createInputView } from './views/create-input-view'
-import { createToolbar } from './views/create-toolbar'
+import { createStatusBar } from './views/create-statusbar'
 
 export class SimpleIme {
   version = version
@@ -49,7 +49,7 @@ export class SimpleIme {
 
   private originPinyin = ''
 
-  private toolbarHandle?: ReturnType<typeof createToolbar>
+  private statusHandle?: ReturnType<typeof createStatusBar>
 
   private inputViewHandle?: ReturnType<typeof createInputView>
 
@@ -352,7 +352,7 @@ export class SimpleIme {
   }
 
   private hideStatus() {
-    this.toolbarHandle?.hide()
+    this.statusHandle?.hide()
   }
 
   private highBack() {
@@ -463,13 +463,13 @@ export class SimpleIme {
   }
 
   private showStatus() {
-    this.toolbarHandle?.show()
+    this.statusHandle?.show()
   }
 
   private switchMethod = () => {
     this.method = (this.method + 1) % 2
     this.chiMode = this.method === 1
-    this.toolbarHandle?.updateMethodIcon()
+    this.statusHandle?.updateMethodIcon()
     if (!this.chiMode) {
       this.setPredictText('')
       this.hideComposition()
@@ -545,9 +545,9 @@ export class SimpleIme {
   }
 
   init() {
-    this.toolbarHandle = createToolbar(this.switchMethod, this.switchShape, this.switchPunct)
+    this.statusHandle = createStatusBar(this.switchMethod, this.switchShape, this.switchPunct)
     if (!this.isOn) {
-      this.toolbarHandle.hide()
+      this.statusHandle.hide()
     }
     this.inputViewHandle = createInputView(
       (e, index) => {
@@ -575,7 +575,7 @@ export class SimpleIme {
 
   turnOn() {
     this.isOn = true
-    this.toolbarHandle?.show()
+    this.statusHandle?.show()
     this.showStatus()
   }
 
@@ -590,7 +590,7 @@ export class SimpleIme {
   }
 
   dispose() {
-    this.toolbarHandle?.dispose()
+    this.statusHandle?.dispose()
     this.inputViewHandle?.dispose()
     this.injectedStyleEl?.remove()
     this.unbindEvents()
