@@ -3,7 +3,7 @@ import chIcon from '../img/ch.png?inline'
 import enIcon from '../img/en.png?inline'
 import quanjiaoIcon from '../img/quanjiao.png?inline'
 import semiEnIcon from '../img/semi-en.png?inline'
-import semiChIcon from '../img/semi-zh.png?inline'
+import semiZhIcon from '../img/semi-zh.png?inline'
 import statusContentHtml from './status.html?raw'
 
 export function createStatusBar(
@@ -16,11 +16,11 @@ export function createStatusBar(
   const contentHtml = statusContentHtml
     .replace('{pinyinIcon}', () => chIcon)
     .replace('{caseIcon}', () => quanjiaoIcon)
-    .replace('{punctIcon}', () => semiChIcon)
+    .replace('{punctIcon}', () => semiZhIcon)
   statusbarEl.innerHTML = contentHtml
   const methodIcons = [chIcon, enIcon]
   const shapeIcons = [quanjiaoIcon, banjiaoIcon]
-  const punctIcons = [semiChIcon, semiEnIcon]
+  const punctIcons = [semiZhIcon, semiEnIcon]
 
   const icons = [methodIcons, shapeIcons, punctIcons]
   const currentIconIndexes = [0, 0, 0]

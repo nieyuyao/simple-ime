@@ -1,6 +1,7 @@
 import { version } from '../package.json'
 import { getCandidates } from './engine'
 import { handleBackspace } from './handlers/backspace'
+import { handleSpecial } from './handlers/special'
 import ImeCss from './styles/index.scss?inline'
 import {
   findConvertPinyinByCursorPosition,
@@ -39,8 +40,16 @@ export class SimpleIme {
 
   private newIn = document.activeElement || document.body
 
+  /**
+   * punct = 0 => full width punctuation
+   * shape = 1 => half width punctuation
+   */
   private punct = 0
 
+  /**
+   * shape = 0 => full width char
+   * shape = 1 => half width char
+   */
   private shape = 0
 
   private isOn = false
@@ -60,6 +69,8 @@ export class SimpleIme {
   private adjustCompositionElTimeoutId = 0
 
   private compositionElSize = { width: 0, height: 0 }
+
+  private pressedKeys: string[] = []
 
   private injectCSS() {
     const style = document.createElement('style')
@@ -82,27 +93,23 @@ export class SimpleIme {
   private bindKeyEvent() {
     window.addEventListener('keydown', this.handleKeyDownEvent, { capture: true })
     window.addEventListener('keypress', this.handleKeyPressEvent, { capture: true })
+    window.addEventListener('keyup', this.handleKeyUpEvent, { capture: true })
   }
 
   private unbindEvents() {
     window.removeEventListener('keydown', this.handleKeyDownEvent, { capture: true })
     window.removeEventListener('keypress', this.handleKeyPressEvent, { capture: true })
+    window.removeEventListener('keyup', this.handleKeyUpEvent, { capture: true })
     window.removeEventListener('focusin', this.handleFocusinEvent, { capture: true })
     window.removeEventListener('focusout', this.handleFocusoutEvent, { capture: true })
   }
 
   private handleKeyDownEvent = (e: KeyboardEvent) => {
     const { isOn, newIn, originPinyin } = this
+    this.pressedKeys.push(e.key)
     if (!isOn || !newIn) {
       return
     }
-
-    if (e.key === 'Shift') {
-      e.preventDefault()
-      this.switchMethod()
-      return
-    }
-
     if (!this.chiMode || !this.typeOn) {
       return
     }
@@ -135,6 +142,7 @@ export class SimpleIme {
       this.updateCompositionPosition()
     }
     else if (e.code === 'Escape') {
+      e.preventDefault()
       this.setPredictText('')
       this.cursorPosition = 0
       this.hideComposition()
@@ -159,7 +167,20 @@ export class SimpleIme {
   }
 
   private handleKeyPressEvent = (e: KeyboardEvent) => {
-    if (!this.isOn || !this.newIn || !this.chiMode) {
+    if (!this.isOn || !this.newIn) {
+      return
+    }
+    if ((this.shape === 0 || this.punct === 0) && !this.typeOn) {
+      if (this.shape !== 1 || /[.;]/.test(e.key)) {
+        const translated = handleSpecial(e.key)
+        if (translated) {
+          this.commitText(translated)
+          e.preventDefault()
+          return
+        }
+      }
+    }
+    if (!this.chiMode) {
       return
     }
     if (/^[a-z']$/.test(e.key)) {
@@ -189,7 +210,7 @@ export class SimpleIme {
     else if (e.key === 'Enter') {
       if (this.typeOn) {
         e.preventDefault()
-        this.commitText()
+        this.commitText(this.getPredictText())
         this.hideComposition()
         this.clearCandidate()
       }
@@ -210,7 +231,7 @@ export class SimpleIme {
       e.preventDefault()
       this.candidatePageUp()
     }
-    else if (e.key === '=') {
+    else if (e.key === '+' || e.key === '=') {
       e.preventDefault()
       this.candidatePageDown()
     }
@@ -235,6 +256,15 @@ export class SimpleIme {
         e.preventDefault()
       }
     }
+  }
+
+  private handleKeyUpEvent = (e: KeyboardEvent) => {
+    // toggle method when only shift key is pressed
+    if (this.pressedKeys.length === 1 && this.pressedKeys[0] === 'Shift') {
+      e.preventDefault()
+      this.switchMethod()
+    }
+    this.pressedKeys = []
   }
 
   private handleFocusinEvent = () => {
@@ -302,9 +332,8 @@ export class SimpleIme {
     this.candsMatchLens = []
   }
 
-  private commitText() {
-    const str = this.getPredictText()
-    updateContent(this.newIn, str)
+  private commitText(text) {
+    updateContent(this.newIn, text)
     dispatchInputEvent(this.newIn, 'input')
     this.originPinyin = ''
     this.accMatchedPinyin = ''
@@ -400,7 +429,7 @@ export class SimpleIme {
     newText += text.substring(chineseLen + matchedLength)
     if (text.substring(chineseLen + matchedLength).length === 0) {
       this.setPredictText(newText)
-      this.commitText()
+      this.commitText(this.getPredictText())
       this.hideComposition()
       this.clearCandidate()
       this.cursorPosition = 0
