@@ -13,7 +13,7 @@ const isHome = computed(() => {
   <div>
     <div v-if="isHome">
       <router-link v-for="(targetRoute, i) in routes.filter(item => item.path !== '/')" :key="i" :to="targetRoute.path">
-        {{ route.name }}
+        {{ targetRoute.name }}
       </router-link>
     </div>
     <router-view v-if="!isHome" />

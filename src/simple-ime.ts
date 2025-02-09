@@ -106,7 +106,9 @@ export class SimpleIme {
 
   private handleKeyDownEvent = (e: KeyboardEvent) => {
     const { isOn, newIn, originPinyin } = this
-    this.pressedKeys.push(e.key)
+    if (this.pressedKeys.length <= 2) {
+      this.pressedKeys.push(e.key)
+    }
     if (!isOn || !newIn) {
       return
     }
@@ -172,9 +174,9 @@ export class SimpleIme {
     }
     if ((this.shape === 0 || this.punct === 0) && !this.typeOn) {
       if (this.shape !== 1 || /[.;]/.test(e.key)) {
-        const translated = handleSpecial(e.key)
-        if (translated) {
-          this.commitText(translated)
+        const converted = handleSpecial(e.key)
+        if (converted) {
+          this.commitText(converted)
           e.preventDefault()
           return
         }
@@ -251,10 +253,8 @@ export class SimpleIme {
       e.preventDefault()
       this.moveCursorPositionRight()
     }
-    else {
-      if (this.typeOn) {
-        e.preventDefault()
-      }
+    else if (this.typeOn) {
+      e.preventDefault()
     }
   }
 

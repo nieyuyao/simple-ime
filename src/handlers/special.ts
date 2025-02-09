@@ -16,7 +16,7 @@ const specialCharMap: Record<string, string | [string, number]> = {
   ';': '；',
   ':': '：',
   '\'': ['‘’', 0],
-  '"': ['‘’', 0],
+  '"': ['“”', 0],
   '/': '／',
   '?': '？',
 }
@@ -26,9 +26,9 @@ export function handleSpecial(c: string): string | null {
     return null
   }
   if (Array.isArray(specialCharMap[c])) {
-    const idx = specialCharMap[c][1]
-    specialCharMap[c][1] = idx + 1
-    return specialCharMap[c][0].charAt(idx)
+    const [converted, idx] = specialCharMap[c]
+    specialCharMap[c][1] = (idx + 1) % converted.length
+    return converted.charAt(idx)
   }
   return specialCharMap[c]
 }
