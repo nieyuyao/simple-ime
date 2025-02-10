@@ -13,9 +13,9 @@ const routesArray: Array<RouteRecordRaw> = [
     component: () => import('./Basic.vue'),
   },
   {
-    path: '/placement',
-    name: 'Placement',
-    component: () => import('./Placement.vue'),
+    path: '/layout',
+    name: 'Layout',
+    component: () => import('./Layout.vue'),
   },
 ]
 

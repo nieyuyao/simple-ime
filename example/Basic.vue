@@ -16,6 +16,7 @@ function onCompositionEnd(e) {
 </script>
 
 <template>
+  <p>basic example</p>
   <input
     type="text"
     @input="onInput"

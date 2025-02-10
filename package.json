@@ -21,6 +21,7 @@
     "build": "vite build",
     "test": "vitest",
     "compressDict": "node --loader ts-node/esm --no-warnings=ExperimentalWarning scripts/compress-dict.ts",
+    "lint": "eslint",
     "release": "bash ./release.sh"
   },
   "dependencies": {
