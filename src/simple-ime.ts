@@ -166,6 +166,10 @@ export class SimpleIme {
       e.preventDefault()
       this.candidateNext()
     }
+    else if (e.key === 'Shift') {
+      e.preventDefault()
+      this.endComposition()
+    }
   }
 
   private handleKeyPressEvent = (e: KeyboardEvent) => {
@@ -212,9 +216,7 @@ export class SimpleIme {
     else if (e.key === 'Enter') {
       if (this.typeOn) {
         e.preventDefault()
-        this.commitText(this.getPredictText())
-        this.hideComposition()
-        this.clearCandidate()
+        this.endComposition()
       }
     }
     else if (/^[1-5]$/.test(e.key)) {
@@ -340,6 +342,15 @@ export class SimpleIme {
     this.setPredictText('')
   }
 
+  private endComposition() {
+    const text = this.getPredictText()
+    this.commitText(text)
+    this.hideComposition()
+    this.clearCandidate()
+    this.cursorPosition = 0
+    dispatchCompositionEvent(this.newIn, 'compositionend', text)
+  }
+
   private fetchCandidateAsync() {
     this.clearCandidate()
     const text = this.getPredictText()
@@ -429,11 +440,7 @@ export class SimpleIme {
     newText += text.substring(chineseLen + matchedLength)
     if (text.substring(chineseLen + matchedLength).length === 0) {
       this.setPredictText(newText)
-      this.commitText(this.getPredictText())
-      this.hideComposition()
-      this.clearCandidate()
-      this.cursorPosition = 0
-      dispatchCompositionEvent(this.newIn, 'compositionend', newText)
+      this.endComposition()
     }
     else {
       const { html, cursorPosition } = replaceTextAndUpdateCursorPosition(
@@ -498,7 +505,6 @@ export class SimpleIme {
   private switchMethod = () => {
     this.method = (this.method + 1) % 2
     this.chiMode = this.method === 1
-    this.statusHandle?.updateMethodIcon()
     if (!this.chiMode) {
       this.setPredictText('')
       this.hideComposition()
