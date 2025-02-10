@@ -6,15 +6,26 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 8px;
-  width: 90px;
+  width: 128px;
   height: 32px;
   border-radius: 2px;
   background-color: #fff;
   box-shadow: 0px 3px 4px 0px rgba(37, 56, 108, 0.08), 0px 0px 20px 0px rgba(49, 70, 125, 0.12);
   z-index: 987654321;
+  user-select: none;
 
-  .sime-status-icon {
+  & > img {
     width: 20px;
     height: 20px;
+    margin-right: 16px;
+    -webkit-user-drag: none;
+  }
+
+  & > img:last-child {
+    margin-right: 0;
+  }
+
+  .sime-status-drag-icon {
+    cursor: grab;
   }
 }
