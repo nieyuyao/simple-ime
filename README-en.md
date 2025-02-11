@@ -11,7 +11,7 @@ A simple browser tool to use Chinese Pinyin Input Method (IME).
 Compared with [Goole Input tools](https://www.google.com/inputtools/try/), it carries a local dictionary, so there is no need to connect the server to complete the pinyin conversion.
 Accordingly, due to the local dictionary, the bundle cannot be very small. In addition, `iframe` is not supported.
 
-## Some hotkeys
+## Hotkeys
 
 | Hotkey | Description |
 | --- | --- |

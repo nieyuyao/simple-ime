@@ -13,7 +13,7 @@
 与[Goole Input tools](https://www.google.com/inputtools/try/)相比，它携带了一个本地词库，因此不需要联网查询就可以完成拼音转换。
 相应的，由于词库的原因，包体积无法做到很小。此外，不支持`iframe`。
 
-## 一些快捷键
+## 快捷键
 
 | 快捷键 | 描述 |
 | --- | --- |
@@ -26,7 +26,7 @@
 | < | 向左切换候选词 |
 | > | 向左切换候选词 |
 | Shift | 切换英/拼 |
-| Enter | 直接键入当前拼音结果 |
+| Enter | 直接键入转换后内容 |
 | [ | 左移输入法上的光标 |
 | ] | 右移输入法上的光标 |
 
@@ -52,7 +52,7 @@ ime.turnOff()
 
 ### createSimpleIme
 
-创建一个SimpleIme实例.
+创建一个SimpleIme实例
 
 `function createSimpleIme(): SimpleImeInstance`
 
@@ -94,7 +94,7 @@ ime的版本
 
 ## 开发
 
-执行`npm run dev`
+执行`npm run dev`，打开页面`http://localhost:xxx`
 
 ## 构建
 
