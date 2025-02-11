@@ -10,15 +10,18 @@ const dict: Dict = JSON.parse(dictTxt)
 
 type ResultList = ({ w: string, f: number, matchLen: number })[]
 
-function splitDictContent(content: string, list: ResultList, matchLen: number) {
-  const splits = content.split(',')
-  for (let i = 0; i < splits.length; i += 2) {
+export function splitDictContent(content: string, list: ResultList, matchLen: number) {
+  const reg = /(\D+)(\d+)/g
+  let res = reg.exec(content)
+  while (res && res.length >= 3) {
     list.push({
-      w: splits[i],
-      f: +splits[i + 1],
+      w: res[1],
+      f: +res[2],
       matchLen,
     })
+    res = reg.exec(content)
   }
+  return list
 }
 
 function lookupCandidates(pinyin: string): ResultList {

@@ -15,5 +15,5 @@
     "esModuleInterop": true,
     "skipLibCheck": true
   },
-  "include": ["./src/**/*", "example/**/*", "./global.d.ts", "./scripts/**/*"]
+  "include": ["./src/**/*", "example/**/*", "./global.d.ts", "./scripts/**/*", "./tests/**/*"]
 }
