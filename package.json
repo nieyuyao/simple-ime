@@ -20,7 +20,8 @@
     "dev": "vite example --force",
     "build": "vite build",
     "test": "vitest",
-    "compressDict": "node --loader ts-node/esm --no-warnings=ExperimentalWarning scripts/compress-dict.ts",
+    "compressDict": "ts-node --esm ./scripts/compress-dict.ts",
+    "splitDict": "ts-node --esm ./scripts/split-dict.ts && npm run compressDict",
     "lint": "eslint -c ./eslint.config.mjs",
     "release": "bash ./release.sh"
   },

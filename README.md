@@ -12,6 +12,7 @@
 
 与[Goole Input tools](https://www.google.com/inputtools/try/)相比，它携带了一个离线词库，因此不需要联网查询就可以完成拼音转换。
 相应的，由于离线词库，包体积无法做到很小。此外，不支持`iframe`。
+> 如果你想减小离线词库的大小，可以运行`npm run splitDict`，然后将`temp/`目录下的`dict.txt`与`packed-trie`复制到`src/data`目录下，重新构建即可
 
 ## 快捷键
 

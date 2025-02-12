@@ -1,26 +1,34 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { Trie } from 'dawg-lookup'
+import { compress } from './compress-dict.js'
 
 interface Candidate { w: string, f: number }
 
-export function splitDict() {
+function splitDict() {
   const __dirname = fileURLToPath(import.meta.url)
-  const dictString = fs.readFileSync(path.resolve(__dirname, '../../dict/google-pinyin-dict.txt'), { encoding: 'utf-8' })
-  const dict = JSON.parse(dictString) as Record<string, Array<Candidate>>
-  const coreDict: Record<string, Array<[string, number]>> = {}
-  Object.keys(dict).forEach((pinyin) => {
-    dict[pinyin].forEach((candidate) => {
+  const baseDictContent = fs.readFileSync(path.resolve(__dirname, '../../dict/google-pinyin-dict.txt'), { encoding: 'utf-8' })
+  const baseDict = JSON.parse(baseDictContent) as Record<string, Array<Candidate>>
+  const dict: Record<string, Array<[string, number]>> = {}
+  const pinyinList: string[] = []
+  Object.keys(baseDict).forEach((pinyin) => {
+    baseDict[pinyin].forEach((candidate) => {
       if (candidate.f >= 1000) {
-        if (!coreDict[pinyin]) {
-          coreDict[pinyin] = []
+        if (!dict[pinyin]) {
+          dict[pinyin] = []
         }
-        coreDict[pinyin].push([candidate.w, candidate.f])
+        dict[pinyin].push([candidate.w, candidate.f])
+        pinyinList.push(pinyin)
       }
     })
   })
-
-  fs.writeFileSync(path.resolve(__dirname, '../../src/data/dict.txt'), JSON.stringify(coreDict))
+  if (!fs.existsSync(path.resolve(__dirname, '../../temp'))) {
+    fs.mkdirSync(path.resolve(__dirname, '../../temp'))
+  }
+  const trie = new Trie(pinyinList.join(' '))
+  fs.writeFileSync(path.resolve(__dirname, '../../temp/dict.txt'), compress(JSON.stringify(dict)))
+  fs.writeFileSync(path.resolve(__dirname, '../../temp/packed-trie.txt'), trie.pack())
 }
 
 splitDict()
