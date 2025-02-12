@@ -10,8 +10,8 @@
 
 <img src="./public/demo.png" width="240" />
 
-与[Goole Input tools](https://www.google.com/inputtools/try/)相比，它携带了一个本地词库，因此不需要联网查询就可以完成拼音转换。
-相应的，由于词库的原因，包体积无法做到很小。此外，不支持`iframe`。
+与[Goole Input tools](https://www.google.com/inputtools/try/)相比，它携带了一个离线词库，因此不需要联网查询就可以完成拼音转换。
+相应的，由于离线词库，包体积无法做到很小。此外，不支持`iframe`。
 
 ## 快捷键
 

@@ -8,8 +8,8 @@ A simple browser tool to use Chinese Pinyin Input Method (IME).
 
 <img src="./public/demo.png" width="240" />
 
-Compared with [Goole Input tools](https://www.google.com/inputtools/try/), it carries a local dictionary, so there is no need to connect the server to complete the pinyin conversion.
-Accordingly, due to the local dictionary, the bundle cannot be very small. In addition, `iframe` is not supported.
+Compared with [Goole Input tools](https://www.google.com/inputtools/try/), it carries a offline dictionary, so there is no need to connect the server to complete the pinyin conversion.
+Accordingly, due to the offline dictionary, the bundle cannot be very small. In addition, `iframe` is not supported.
 
 ## Hotkeys
 
