@@ -119,5 +119,10 @@ export function createStatusBar(
       statusbarEl.remove()
       dragDisposer?.unbindEventHandlers()
     },
+    toggleMethodIcon() {
+      const idx = (currentIconIndexes[0] + 1) % 2
+      currentIconIndexes[0] = idx
+      statusIconEls[0].src = icons[0][idx]
+    },
   }
 }

@@ -265,6 +265,7 @@ export class SimpleIme {
     if (this.pressedKeys.length === 1 && this.pressedKeys[0] === 'Shift') {
       e.preventDefault()
       this.switchMethod()
+      this.statusHandle?.toggleMethodIcon()
     }
     this.pressedKeys = []
   }
