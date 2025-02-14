@@ -82,30 +82,25 @@ export function moveCursorPositionLeft(text: string, cursorPosition: number): nu
 }
 
 export function moveCursorPositionRight(text: string, cursorPosition: number): number {
-  if (cursorPosition >= text.length) {
-    return cursorPosition
+  if (cursorPosition + 1 >= text.length) {
+    return text.length
   }
   return cursorPosition + 1
 }
 
-export function findConvertPinyinByCursorPosition(text: string, cursorPosition: number): {
+export function moveCursorPositionLast(text: string): number {
+  return text.length
+}
+
+export function findConvertPinyinByCursorPosition(text: string, startPosition: number, cursorPosition: number): {
   origin: string
   pinyin: string
 } {
-  let lastChineseIdx = -1
-  for (let i = 0; i < text.length; i++) {
-    if (isChinese(text.charCodeAt(i))) {
-      lastChineseIdx++
-    }
-    else {
-      break
-    }
-  }
   const quote = '\''
   let prefixQuotes = 0
   let suffixQuotes = 0
   let pinyin = ''
-  for (let i = lastChineseIdx + 1; i < text.length; i++) {
+  for (let i = startPosition; i < text.length; i++) {
     if (i === cursorPosition && pinyin) {
       break
     }

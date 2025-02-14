@@ -7,13 +7,14 @@ import {
   findConvertPinyinByCursorPosition,
   generateTextByCursorPosition,
   insertCharAtCursorPosition,
+  moveCursorPositionLast,
   moveCursorPositionLeft,
   moveCursorPositionRight,
   replaceTextAndUpdateCursorPosition,
 } from './utils/cursor'
 import { isEditableElement, updateContent } from './utils/dom'
 import { dispatchCompositionEvent, dispatchInputEvent } from './utils/event'
-import { hasChinese, isLatin, lengthChinese } from './utils/pinyin'
+import { hasChinese, hasLatin, lengthChinese } from './utils/pinyin'
 import { createInputView } from './views/create-input-view'
 import { createStatusBar } from './views/create-statusbar'
 
@@ -28,7 +29,7 @@ export class SimpleIme {
 
   private candsMatchLens: number[] = []
 
-  private candsMathOriginPinyins: string[] = []
+  private candsMatchOriginPinyins: string[] = []
 
   private accMatchedPinyin = ''
 
@@ -71,6 +72,8 @@ export class SimpleIme {
   private compositionElSize = { width: 0, height: 0 }
 
   private pressedKeys: string[] = []
+
+  private unconvertedPinyinIdx = 0
 
   private injectCSS() {
     const style = document.createElement('style')
@@ -125,6 +128,7 @@ export class SimpleIme {
         this.setPredictText(html)
         this.fetchCandidateAsync()
         this.accMatchedPinyin = ''
+        this.unconvertedPinyinIdx = 0
         dispatchCompositionEvent(this.newIn, 'compositionupdate', this.getPredictText())
       }
       else {
@@ -349,13 +353,14 @@ export class SimpleIme {
     this.hideComposition()
     this.clearCandidate()
     this.cursorPosition = 0
+    this.unconvertedPinyinIdx = 0
     dispatchCompositionEvent(this.newIn, 'compositionend', text)
   }
 
   private fetchCandidateAsync() {
     this.clearCandidate()
     const text = this.getPredictText()
-    const { pinyin, origin } = findConvertPinyinByCursorPosition(text, this.cursorPosition)
+    const { pinyin, origin } = findConvertPinyinByCursorPosition(text, this.unconvertedPinyinIdx, this.cursorPosition)
     const [candidates, matchLens] = getCandidates(pinyin)
     this.setCandidates(candidates)
     if (origin.length > pinyin.length) {
@@ -376,7 +381,7 @@ export class SimpleIme {
   }
 
   private getNthMatchOriginPinyin(n: number) {
-    return this.candsMathOriginPinyins[5 * this.candPage + n - 1]
+    return this.candsMatchOriginPinyins[5 * this.candPage + n - 1]
   }
 
   private getPredictText() {
@@ -425,35 +430,39 @@ export class SimpleIme {
     }
     const cand = this.getNthCandidate(selection)
     const text = this.getPredictText()
-    let chineseLen = 0
-    for (let i = 0; i < text.length; i++) {
-      if (isLatin(text.charCodeAt(i))) {
-        chineseLen = i
-        break
-      }
-    }
     const matchedLength = this.getNthMatchLen(selection)
     const matchedOriginPinyin = this.getNthMatchOriginPinyin(selection)
     this.accMatchedPinyin += matchedOriginPinyin
     let newText = ''
-    newText = text.substring(0, chineseLen)
+    newText = text.substring(0, this.unconvertedPinyinIdx)
     newText += cand
-    newText += text.substring(chineseLen + matchedLength)
-    if (text.substring(chineseLen + matchedLength).length === 0) {
+    newText += text.substring(this.unconvertedPinyinIdx + matchedLength)
+    this.unconvertedPinyinIdx += cand.length
+    if (this.unconvertedPinyinIdx >= newText.length) {
       this.setPredictText(newText)
       this.endComposition()
     }
     else {
-      const { html, cursorPosition } = replaceTextAndUpdateCursorPosition(
+      let { html, cursorPosition } = replaceTextAndUpdateCursorPosition(
         text,
-        chineseLen,
+        this.unconvertedPinyinIdx - cand.length,
         this.getNthMatchLen(selection),
         cand,
         this.cursorPosition,
       )
-      this.cursorPosition = cursorPosition
       this.setPredictText(html)
       newText = this.getPredictText()
+      if (!hasLatin(cand)) {
+        this.cursorPosition = cursorPosition
+      }
+      else {
+        this.cursorPosition = moveCursorPositionLast(newText)
+        if (this.cursorPosition !== cursorPosition) {
+          html = generateTextByCursorPosition(text, this.cursorPosition)
+          this.setPredictText(html)
+        }
+      }
+      this.updateCompositionPosition()
       this.fetchCandidateAsync()
       dispatchCompositionEvent(this.newIn, 'compositionupdate', newText)
     }
@@ -465,7 +474,7 @@ export class SimpleIme {
 
   private setMatchLens(matchLens: number[], matchOriginPinyins: string[]) {
     this.candsMatchLens = matchLens
-    this.candsMathOriginPinyins = matchOriginPinyins
+    this.candsMatchOriginPinyins = matchOriginPinyins
   }
 
   private setPredictText(html: string) {
@@ -619,6 +628,7 @@ export class SimpleIme {
     this.isOn = false
     this.setPredictText('')
     this.accMatchedPinyin = ''
+    this.unconvertedPinyinIdx = 0
     this.cursorPosition = 0
     this.hideComposition()
     this.clearCandidate()
