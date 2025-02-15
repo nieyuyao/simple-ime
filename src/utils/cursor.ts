@@ -1,5 +1,3 @@
-import { isChinese } from './pinyin'
-
 export function insertCharAtCursorPosition(
   text: string,
   char: string,
@@ -71,24 +69,18 @@ export function replaceTextAndUpdateCursorPosition(
   }
 }
 
-export function moveCursorPositionLeft(text: string, cursorPosition: number): number {
-  if (cursorPosition - 1 < 0) {
-    return 0
-  }
-  if (isChinese(text.charCodeAt(cursorPosition - 1))) {
+export function moveCursorPositionLeft(startPosition: number, cursorPosition: number): number {
+  if (cursorPosition - 1 < startPosition) {
     return cursorPosition
   }
-  return cursorPosition - 1
+  return cursorPosition - 1 <= 0 ? 0 : cursorPosition - 1
 }
 
 export function moveCursorPositionRight(text: string, cursorPosition: number): number {
-  if (cursorPosition + 1 >= text.length) {
-    return text.length
-  }
-  return cursorPosition + 1
+  return cursorPosition + 1 >= text.length ? text.length : cursorPosition + 1
 }
 
-export function moveCursorPositionLast(text: string): number {
+export function moveCursorPositionEnd(text: string): number {
   return text.length
 }
 

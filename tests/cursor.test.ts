@@ -86,11 +86,9 @@ it('replaceTextAndUpdateCursorPosition', () => {
 })
 
 it('moveCursorPositionLeft', () => {
-  expect(moveCursorPositionLeft('nihao', 1)).toBe<number>(0)
-  expect(moveCursorPositionLeft('nihao', 0)).toBe<number>(0)
-  expect(moveCursorPositionLeft('nihao', 5)).toBe<number>(4)
-  expect(moveCursorPositionLeft('你hao', 1)).toBe<number>(1)
-  expect(moveCursorPositionLeft('你hao', 2)).toBe<number>(1)
+  expect(moveCursorPositionLeft(0, 1)).toBe<number>(0)
+  expect(moveCursorPositionLeft(1, 2)).toBe<number>(1)
+  expect(moveCursorPositionLeft(1, 1)).toBe<number>(1)
 })
 
 it('moveCursorPositionRight', () => {

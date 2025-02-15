@@ -23,6 +23,7 @@
     "compressDict": "ts-node --esm ./scripts/compress-dict.ts",
     "splitDict": "ts-node --esm ./scripts/split-dict.ts && npm run compressDict",
     "lint": "eslint -c ./eslint.config.mjs",
+    "lint:fix": "eslint -c ./eslint.config.mjs --fix",
     "release": "bash ./release.sh"
   },
   "dependencies": {
