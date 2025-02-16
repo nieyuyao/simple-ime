@@ -2,9 +2,9 @@ import banjiaoIcon from '../img/banjiao.png?inline'
 import dragIcon from '../img/drag.png?inline'
 import enIcon from '../img/en.png?inline'
 import chIcon from '../img/pin.png?inline'
+import punctEnIcon from '../img/punct-en.png?inline'
+import punctZhIcon from '../img/punct-zh.png?inline'
 import quanjiaoIcon from '../img/quanjiao.png?inline'
-import semiEnIcon from '../img/semi-en.png?inline'
-import semiZhIcon from '../img/semi-zh.png?inline'
 import statusContentHtml from './status.html?raw'
 
 interface MousePosition { x: number, y: number }
@@ -74,13 +74,13 @@ export function createStatusBar(
   statusbarEl.id = 'sime-status-bar'
   const contentHtml = statusContentHtml
     .replace('{pinyinIcon}', () => chIcon)
-    .replace('{caseIcon}', () => quanjiaoIcon)
-    .replace('{punctIcon}', () => semiZhIcon)
+    .replace('{shapeIcon}', () => quanjiaoIcon)
+    .replace('{punctIcon}', () => punctZhIcon)
     .replace('{dragIcon}', dragIcon)
   statusbarEl.innerHTML = contentHtml
   const methodIcons = [chIcon, enIcon]
   const shapeIcons = [quanjiaoIcon, banjiaoIcon]
-  const punctIcons = [semiZhIcon, semiEnIcon]
+  const punctIcons = [punctZhIcon, punctEnIcon]
 
   let dragDisposer: ReturnType<typeof dragStatusbar> | null = null
 
