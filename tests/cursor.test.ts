@@ -86,11 +86,9 @@ it('replaceTextAndUpdateCursorPosition', () => {
 })
 
 it('moveCursorPositionLeft', () => {
-  expect(moveCursorPositionLeft('nihao', 1)).toBe<number>(0)
-  expect(moveCursorPositionLeft('nihao', 0)).toBe<number>(0)
-  expect(moveCursorPositionLeft('nihao', 5)).toBe<number>(4)
-  expect(moveCursorPositionLeft('你hao', 1)).toBe<number>(1)
-  expect(moveCursorPositionLeft('你hao', 2)).toBe<number>(1)
+  expect(moveCursorPositionLeft(0, 1)).toBe<number>(0)
+  expect(moveCursorPositionLeft(1, 2)).toBe<number>(1)
+  expect(moveCursorPositionLeft(1, 1)).toBe<number>(1)
 })
 
 it('moveCursorPositionRight', () => {
@@ -102,15 +100,16 @@ it('moveCursorPositionRight', () => {
 })
 
 it('findNextConvertPinyinByCursorPosition', () => {
-  expect(findConvertPinyinByCursorPosition('nihao', 2)).toEqual({ origin: 'ni', pinyin: 'ni' })
-  expect(findConvertPinyinByCursorPosition('ni\'hao', 2)).toEqual({ origin: 'ni', pinyin: 'ni' })
-  expect(findConvertPinyinByCursorPosition('ni\'hao', 3)).toEqual({ origin: 'ni\'', pinyin: 'ni' })
-  expect(findConvertPinyinByCursorPosition('ni\'\'hao', 4)).toEqual({ origin: 'ni\'\'', pinyin: 'ni' })
-  expect(findConvertPinyinByCursorPosition('你\'\'hao', 3)).toEqual({ origin: '\'\'hao', pinyin: 'hao' })
-  expect(findConvertPinyinByCursorPosition('你\'\'hao\'le', 3)).toEqual({ origin: '\'\'hao\'', pinyin: 'hao' })
-  expect(findConvertPinyinByCursorPosition('你\'\'hao\'le\'\'', 3)).toEqual({ origin: '\'\'hao\'', pinyin: 'hao' })
-  expect(findConvertPinyinByCursorPosition('你zenhao\'\'', 4)).toEqual({ origin: 'zen', pinyin: 'zen' })
-  expect(findConvertPinyinByCursorPosition('你zen\'\'hao\'\'', 6)).toEqual({ origin: 'zen\'\'', pinyin: 'zen' })
-  expect(findConvertPinyinByCursorPosition('你zen\'\'hao\'\'', 5)).toEqual({ origin: 'zen\'', pinyin: 'zen' })
-  expect(findConvertPinyinByCursorPosition('ni\'\'hao\'\'de', 11)).toEqual({ origin: 'ni\'\'', pinyin: 'ni' })
+  expect(findConvertPinyinByCursorPosition('nihao', 0, 2)).toEqual({ origin: 'ni', pinyin: 'ni' })
+  expect(findConvertPinyinByCursorPosition('ni\'hao', 0, 2)).toEqual({ origin: 'ni', pinyin: 'ni' })
+  expect(findConvertPinyinByCursorPosition('ni\'hao', 0, 3)).toEqual({ origin: 'ni\'', pinyin: 'ni' })
+  expect(findConvertPinyinByCursorPosition('ni\'\'hao', 0, 4)).toEqual({ origin: 'ni\'\'', pinyin: 'ni' })
+  expect(findConvertPinyinByCursorPosition('你\'\'hao', 1, 3)).toEqual({ origin: '\'\'hao', pinyin: 'hao' })
+  expect(findConvertPinyinByCursorPosition('你\'\'hao\'le', 1, 3)).toEqual({ origin: '\'\'hao\'', pinyin: 'hao' })
+  expect(findConvertPinyinByCursorPosition('你\'\'hao\'le\'\'', 1, 3)).toEqual({ origin: '\'\'hao\'', pinyin: 'hao' })
+  expect(findConvertPinyinByCursorPosition('你zenhao\'\'', 1, 4)).toEqual({ origin: 'zen', pinyin: 'zen' })
+  expect(findConvertPinyinByCursorPosition('你zen\'\'hao\'\'', 1, 6)).toEqual({ origin: 'zen\'\'', pinyin: 'zen' })
+  expect(findConvertPinyinByCursorPosition('你zen\'\'hao\'\'', 1, 5)).toEqual({ origin: 'zen\'', pinyin: 'zen' })
+  expect(findConvertPinyinByCursorPosition('你好de', 2, 5)).toEqual({ origin: 'de', pinyin: 'de' })
+  expect(findConvertPinyinByCursorPosition('ni\'\'hao\'\'de', 0, 11)).toEqual({ origin: 'ni\'\'', pinyin: 'ni' })
 })
