@@ -6,7 +6,7 @@ type Dict = Record<string, string>
 
 type ResultList = ({ w: string, f: number, matchLen: number })[]
 
-const dict: Dict = JSON.parse(dictTxt)
+export const dict: Dict = JSON.parse(dictTxt)
 
 export const trie = new PTrie(packedTrieTxt)
 

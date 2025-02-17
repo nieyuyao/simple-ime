@@ -14,3 +14,5 @@ export interface SimpleImeInstance {
   /** 销毁输入法实例 */
   dispose: () => void
 }
+
+export interface Candidate { w: string, f: number }

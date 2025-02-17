@@ -3,6 +3,9 @@ import { getCandidates } from './engine'
 import { handleBackspace } from './handlers/backspace'
 import { handleSpecial } from './handlers/special'
 import ImeCss from './styles/index.scss?inline'
+import { isEditableElement, updateContent } from './utils/dom'
+import { dispatchCompositionEvent, dispatchInputEvent } from './utils/event'
+import { hasLatin } from './utils/pinyin'
 import {
   findConvertPinyinByCursorPosition,
   generateTextByCursorPosition,
@@ -12,9 +15,6 @@ import {
   moveCursorPositionRight,
   replaceTextAndUpdateCursorPosition,
 } from './utils/predict'
-import { isEditableElement, updateContent } from './utils/dom'
-import { dispatchCompositionEvent, dispatchInputEvent } from './utils/event'
-import { hasLatin } from './utils/pinyin'
 import { createInputView } from './views/create-input-view'
 import { createStatusBar } from './views/create-statusbar'
 

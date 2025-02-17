@@ -1,8 +1,7 @@
+import type { Candidate } from '../src/types'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-
-interface Candidate { w: string, f: number }
 
 export function compress(content: string) {
   const dict = JSON.parse(content) as Record<string, Array<Candidate>>
