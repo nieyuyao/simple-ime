@@ -69,7 +69,7 @@ export class SimpleIme {
 
   private adjustCompositionElTimeoutId = 0
 
-  private compositionElSize = { width: 0, height: 0 }
+  private compositionElSize = { width: 0, height: 0, x: 0, y:  0 }
 
   private pressedKeys: string[] = []
 
@@ -123,27 +123,26 @@ export class SimpleIme {
       e.preventDefault()
       const text = this.getPredictText()
       const { html, newCursorPosition } = handleBackspace(text, originPinyin, this.cursorPosition)
-      if (this.unconvertedPinyinStartPosition >= 0) {
-        this.cursorPosition = newCursorPosition
+      this.setPredictText(html)
+      const newText = this.getPredictText()
+      this.cursorPosition = newCursorPosition
+      if (!newText) {
+        this.hideComposition()
+        this.clearCandidate()
+        this.originPinyin = ''
+        this.cursorPosition = 0
         this.unconvertedPinyinStartPosition = 0
-        this.setPredictText(html)
+      }
+      else if (this.unconvertedPinyinStartPosition >= 0) {
+        this.unconvertedPinyinStartPosition = 0
         this.fetchCandidateAsync()
         this.accMatchedPinyin = ''
-        dispatchCompositionEvent(this.newIn, 'compositionupdate', this.getPredictText())
+        dispatchCompositionEvent(this.newIn, 'compositionupdate', newText)
       }
       else {
-        this.cursorPosition = newCursorPosition
-        this.setPredictText(html)
-        this.originPinyin = this.getPredictText()
-        if (text.length === 1) {
-          this.hideComposition()
-          this.clearCandidate()
-          this.cursorPosition = 0
-        }
-        else {
-          this.fetchCandidateAsync()
-        }
-        dispatchCompositionEvent(this.newIn, 'compositionupdate', this.getPredictText())
+        this.originPinyin = newText
+        this.fetchCandidateAsync()
+        dispatchCompositionEvent(this.newIn, 'compositionupdate', newText)
       }
       this.updateCompositionPosition()
     }
@@ -561,30 +560,38 @@ export class SimpleIme {
 
   private updateCompositionPosition() {
     window.clearTimeout(this.adjustCompositionElTimeoutId)
-    this.adjustCompositionElTimeoutId = window.setTimeout(() => {
-      if (this.newIn) {
-        const el = document.getElementById('sime-composition')
-        if (el) {
-          const { top, left, height } = this.newIn.getBoundingClientRect()
-          const winWidth = window.innerWidth
-          const winHeight = window.innerHeight
-          const elWidth = el.clientWidth
-          const elHeight = el.clientHeight
-          const paddingLeft = 20
-          const paddingTop = 20
-          if (this.compositionElSize.width === elWidth && this.compositionElSize.height === elHeight) {
-            return
-          }
-          let newLeft = Math.max(left, 0) + paddingLeft
-          let newTop = top + height + paddingTop
-          newLeft = newLeft + elWidth >= winWidth ? Math.max(winWidth - elWidth - paddingLeft) : Math.max(left, 0) + paddingLeft
-          newTop = newTop + elHeight >= winHeight ? Math.max(top - paddingTop - elHeight, 0) : newTop
-          el.style.top = `${newTop}px`
-          el.style.left = `${newLeft}px`
-          this.compositionElSize = { width: elWidth, height: elHeight }
-          this.updateCompositionPosition()
+    if (this.newIn) {
+      const el = document.getElementById('sime-composition')
+      if (el) {
+        const { top, left, height } = this.newIn.getBoundingClientRect()
+        const docWidth = document.documentElement.clientWidth
+        const docHeight = document.documentElement.clientHeight
+        const elWidth = el.clientWidth
+        const elHeight = el.clientHeight
+        const paddingLeft = 20
+        const paddingTop = 20
+     
+        let newLeft = Math.max(left, 0) + paddingLeft
+        let newTop = top + height + paddingTop
+        newLeft = newLeft + elWidth >= docWidth ? Math.max(docWidth - elWidth - paddingLeft) : Math.max(left, 0) + paddingLeft
+        newTop = newTop + elHeight >= docHeight ? Math.max(top - paddingTop - elHeight, 0) : newTop
+        if (
+          this.compositionElSize.width === elWidth
+          && this.compositionElSize.height === elHeight
+          && this.compositionElSize.x === newLeft
+          && this.compositionElSize.y === newTop
+        ) {
+          return
         }
+        el.style.top = `${newTop}px`
+        el.style.left = `${newLeft}px`
+        console.log(newTop)
+        this.compositionElSize = { width: elWidth, height: elHeight, x: newLeft, y: newTop }
+        this.updateCompositionPosition()
       }
+    }
+    this.adjustCompositionElTimeoutId = window.setTimeout(() => {
+      this.updateCompositionPosition()
     }, 0)
   }
 
