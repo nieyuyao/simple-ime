@@ -69,7 +69,7 @@ export class SimpleIme {
 
   private adjustCompositionElTimeoutId = 0
 
-  private compositionElSize = { width: 0, height: 0, x: 0, y:  0 }
+  private compositionElSize = { width: 0, height: 0, x: 0, y: 0 }
 
   private pressedKeys: string[] = []
 
@@ -570,7 +570,6 @@ export class SimpleIme {
         const elHeight = el.clientHeight
         const paddingLeft = 20
         const paddingTop = 20
-     
         let newLeft = Math.max(left, 0) + paddingLeft
         let newTop = top + height + paddingTop
         newLeft = newLeft + elWidth >= docWidth ? Math.max(docWidth - elWidth - paddingLeft) : Math.max(left, 0) + paddingLeft
