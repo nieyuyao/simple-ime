@@ -14,7 +14,7 @@ import {
 } from './utils/cursor'
 import { isEditableElement, updateContent } from './utils/dom'
 import { dispatchCompositionEvent, dispatchInputEvent } from './utils/event'
-import { hasChinese, hasLatin } from './utils/pinyin'
+import { hasLatin } from './utils/pinyin'
 import { createInputView } from './views/create-input-view'
 import { createStatusBar } from './views/create-statusbar'
 
@@ -122,14 +122,13 @@ export class SimpleIme {
     if (e.key === 'Backspace') {
       e.preventDefault()
       const text = this.getPredictText()
-      const includeCh = hasChinese(text)
       const { html, newCursorPosition } = handleBackspace(text, originPinyin, this.cursorPosition)
-      if (includeCh) {
+      if (this.unconvertedPinyinStartPosition >= 0) {
         this.cursorPosition = newCursorPosition
+        this.unconvertedPinyinStartPosition = 0
         this.setPredictText(html)
         this.fetchCandidateAsync()
         this.accMatchedPinyin = ''
-        this.unconvertedPinyinStartPosition = 0
         dispatchCompositionEvent(this.newIn, 'compositionupdate', this.getPredictText())
       }
       else {
