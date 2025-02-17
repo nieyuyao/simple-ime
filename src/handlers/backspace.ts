@@ -21,6 +21,6 @@ export function handleBackspace(text: string, originPinyin: string, cursorPositi
   }
   else {
     const html = deleteCharAtCursorPosition(text, cursorPosition)
-    return { html, newCursorPosition: cursorPosition - 1 }
+    return { html, newCursorPosition: Math.max(0, cursorPosition - 1) }
   }
 }
