@@ -7,7 +7,7 @@ import {
   moveCursorPositionLeft,
   moveCursorPositionRight,
   replaceTextAndUpdateCursorPosition,
-} from '../src/utils/cursor'
+} from '../src/utils/predict'
 
 it('insertCharAtCursorPosition', () => {
   expect(insertCharAtCursorPosition('niha', 'o', -1)).toBe(

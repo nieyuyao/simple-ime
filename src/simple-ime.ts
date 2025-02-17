@@ -11,7 +11,7 @@ import {
   moveCursorPositionLeft,
   moveCursorPositionRight,
   replaceTextAndUpdateCursorPosition,
-} from './utils/cursor'
+} from './utils/predict'
 import { isEditableElement, updateContent } from './utils/dom'
 import { dispatchCompositionEvent, dispatchInputEvent } from './utils/event'
 import { hasLatin } from './utils/pinyin'
