@@ -9,7 +9,7 @@ import { hasLatin } from './utils/pinyin'
 import {
   findConvertPinyinByCursorPosition,
   generateTextByCursorPosition,
-  insertCharAtCursorPosition,
+  insertLetterAtCursorPosition,
   moveCursorPositionEnd,
   moveCursorPositionLeft,
   moveCursorPositionRight,
@@ -193,18 +193,16 @@ export class SimpleIme {
       return
     }
     if (/^[a-z']$/.test(e.key)) {
+      e.preventDefault()
       if (e.key === '\'' && !this.typeOn) {
-        e.preventDefault()
         return
       }
-      e.preventDefault()
       const text = this.getPredictText()
-      const html = insertCharAtCursorPosition(text, e.key, this.cursorPosition)
+      const html = insertLetterAtCursorPosition(text, e.key, this.cursorPosition)
       this.setPredictText(html)
       this.cursorPosition++
       const newText = this.getPredictText()
-      const insertPosition = this.cursorPosition + (this.accMatchedPinyin.length - this.unconvertedPinyinStartPosition)
-      this.originPinyin = this.accMatchedPinyin + newText.substring(this.unconvertedPinyinStartPosition, insertPosition) + newText.substring(insertPosition)
+      this.originPinyin = this.accMatchedPinyin + newText.substring(this.unconvertedPinyinStartPosition)
       this.fetchCandidateAsync()
       if (this.typeOn) {
         dispatchCompositionEvent(this.newIn, 'compositionupdate', newText)

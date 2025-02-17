@@ -1,43 +1,43 @@
 import { expect, it } from 'vitest'
 import {
-  deleteCharAtCursorPosition,
+  deleteLetterAtCursorPosition,
   findConvertPinyinByCursorPosition,
   generateTextByCursorPosition,
-  insertCharAtCursorPosition,
+  insertLetterAtCursorPosition,
   moveCursorPositionLeft,
   moveCursorPositionRight,
   replaceTextAndUpdateCursorPosition,
 } from '../src/utils/predict'
 
-it('insertCharAtCursorPosition', () => {
-  expect(insertCharAtCursorPosition('niha', 'o', -1)).toBe(
+it('insertLetterAtCursorPosition', () => {
+  expect(insertLetterAtCursorPosition('niha', 'o', -1)).toBe(
     '<span>o</span><span class="sime-cursor"></span><span>niha</span>',
   )
-  expect(insertCharAtCursorPosition('niha', 'o', 0)).toBe(
+  expect(insertLetterAtCursorPosition('niha', 'o', 0)).toBe(
     '<span>o</span><span class="sime-cursor"></span><span>niha</span>',
   )
-  expect(insertCharAtCursorPosition('', 'o', 0)).toBe(
+  expect(insertLetterAtCursorPosition('', 'o', 0)).toBe(
     '<span>o</span><span class="sime-cursor"></span>',
   )
-  expect(insertCharAtCursorPosition('niha', 'o', 4)).toBe(
+  expect(insertLetterAtCursorPosition('niha', 'o', 4)).toBe(
     '<span>nihao</span><span class="sime-cursor"></span>',
   )
-  expect(insertCharAtCursorPosition('niha', 'o', 10)).toBe(
+  expect(insertLetterAtCursorPosition('niha', 'o', 10)).toBe(
     '<span>nihao</span><span class="sime-cursor"></span>',
   )
 })
 
-it('deleteCharAtCursorPosition', () => {
-  expect(deleteCharAtCursorPosition('nihao', -1)).toBe(
+it('deleteLetterAtCursorPosition', () => {
+  expect(deleteLetterAtCursorPosition('nihao', -1)).toBe(
     '<span class="sime-cursor"></span><span>nihao</span>',
   )
-  expect(deleteCharAtCursorPosition('nihao', 0)).toBe(
+  expect(deleteLetterAtCursorPosition('nihao', 0)).toBe(
     '<span class="sime-cursor"></span><span>nihao</span>',
   )
-  expect(deleteCharAtCursorPosition('nihao', 5)).toBe(
+  expect(deleteLetterAtCursorPosition('nihao', 5)).toBe(
     '<span>niha</span><span class="sime-cursor"></span>',
   )
-  expect(deleteCharAtCursorPosition('n', 1)).toBe('<span class="sime-cursor"></span>')
+  expect(deleteLetterAtCursorPosition('n', 1)).toBe('<span class="sime-cursor"></span>')
 })
 
 it('generateTextByCursorPosition', () => {
