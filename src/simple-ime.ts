@@ -1,4 +1,3 @@
-import type { SimpleImeOptions } from './types'
 import { version } from '../package.json'
 import { getCandidates } from './engine'
 import { handleBackspace } from './handlers/backspace'
@@ -76,8 +75,6 @@ export class SimpleIme {
   private pressedKeys: string[] = []
 
   private unconvertedPinyinStartPosition = 0
-
-  options: SimpleImeOptions
 
   private injectCSS() {
     const style = document.createElement('style')
@@ -208,18 +205,13 @@ export class SimpleIme {
       this.cursorPosition++
       const newText = this.getPredictText()
       const unConverted = newText.substring(this.unconvertedPinyinStartPosition)
-      if (this.options.experimentalAutoSegment) {
-        const toSegmented = unConverted.substring(this.unconvertedPinyinStartPosition, this.cursorPosition)
-        if (toSegmented) {
-          const segmented = segmentPinyinByTire(toSegmented)
-          const { cursorPosition: newCursorPosition, html } = replaceTextAndUpdateCursorPosition(newText, this.unconvertedPinyinStartPosition, this.cursorPosition - this.unconvertedPinyinStartPosition, segmented, this.cursorPosition)
-          this.setPredictText(html)
-          this.cursorPosition = newCursorPosition
-          this.originPinyin = this.convertedPinyin + segmented + newText.substring(this.cursorPosition)
-        }
-        else {
-          this.originPinyin = this.convertedPinyin + unConverted
-        }
+      const toSegmented = unConverted.substring(this.unconvertedPinyinStartPosition, this.cursorPosition)
+      if (toSegmented) {
+        const segmented = segmentPinyinByTire(toSegmented)
+        const { cursorPosition: newCursorPosition, html } = replaceTextAndUpdateCursorPosition(newText, this.unconvertedPinyinStartPosition, this.cursorPosition - this.unconvertedPinyinStartPosition, segmented, this.cursorPosition)
+        this.setPredictText(html)
+        this.cursorPosition = newCursorPosition
+        this.originPinyin = this.convertedPinyin + segmented + newText.substring(this.cursorPosition)
       }
       else {
         this.originPinyin = this.convertedPinyin + unConverted
@@ -365,7 +357,7 @@ export class SimpleIme {
   }
 
   private endComposition() {
-    const text = this.options.experimentalAutoSegment ? cleanSingleQuotes(this.getPredictText()) : this.getPredictText()
+    const text = cleanSingleQuotes(this.getPredictText())
     this.commitText(text)
     this.hideComposition()
     this.clearCandidate()
@@ -611,11 +603,6 @@ export class SimpleIme {
     this.adjustCompositionElTimeoutId = window.setTimeout(() => {
       this.updateCompositionPosition()
     }, 0)
-  }
-
-  constructor(options: SimpleImeOptions) {
-    options.experimentalAutoSegment = Boolean(options.experimentalAutoSegment)
-    this.options = options
   }
 
   init() {
