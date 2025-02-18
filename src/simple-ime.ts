@@ -139,6 +139,7 @@ export class SimpleIme {
         this.unconvertedPinyinStartPosition = 0
         this.fetchCandidateAsync()
         this.convertedPinyin = ''
+        this.originPinyin = newText
         dispatchCompositionEvent(this.newIn, 'compositionupdate', newText)
       }
       else {
@@ -362,6 +363,7 @@ export class SimpleIme {
     this.hideComposition()
     this.clearCandidate()
     this.cursorPosition = 0
+    this.originPinyin = ''
     this.unconvertedPinyinStartPosition = 0
     dispatchCompositionEvent(this.newIn, 'compositionend', text)
   }
