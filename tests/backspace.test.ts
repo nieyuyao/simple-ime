@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { handleBackspace } from '../src/handlers/backspace'
+import { handleBackspace } from '../src/ime/backspace'
 
 it('handleBackspace', () => {
   expect(handleBackspace('nihao', 'nihao', 2)).toEqual({ html: '<span>n</span><span class="sime-cursor"></span><span>hao</span>', newCursorPosition: 1 })

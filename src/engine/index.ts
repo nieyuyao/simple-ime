@@ -61,13 +61,13 @@ function lookupCandidates(pinyin: string): ResultList {
   return list
 }
 
-export function getCandidates(pinyin: string): [string[], number[]] {
-  const list = lookupCandidates(pinyin)
+export function getCandidates(text: string): [string[], number[]] {
+  const list = lookupCandidates(text)
   const candidates = list.map(item => item.w)
   const matchLens = list.map(item => item.matchLen)
   if (candidates.length <= 0) {
-    candidates.push(pinyin, pinyin.toUpperCase())
-    matchLens.push(pinyin.length, pinyin.length)
+    candidates.push(text, text.toUpperCase())
+    matchLens.push(text.length, text.length)
   }
   return [candidates, matchLens]
 }

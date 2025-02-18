@@ -1,8 +1,8 @@
 import type { SimpleImeInstance } from './types'
-import { SimpleIme } from './simple-ime'
+import { Ime } from './ime'
 
 export function createSimpleIme(): SimpleImeInstance {
-  const ime = new SimpleIme()
+  const ime = new Ime()
   ime.init()
   return ime
 }

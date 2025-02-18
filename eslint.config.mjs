@@ -10,6 +10,7 @@ export default antfu({
     '.github',
   ],
   rules: {
+    'no-console': 'off',
     'unicorn/prefer-dom-node-text-content': 'off',
     'vue/html-self-closing': 'off',
   },

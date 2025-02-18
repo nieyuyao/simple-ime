@@ -7,7 +7,7 @@ import {
   moveCursorPositionLeft,
   moveCursorPositionRight,
   replaceTextAndUpdateCursorPosition,
-} from '../src/utils/predict'
+} from '../src/ime/preedit'
 
 it('insertLetterAtCursorPosition', () => {
   expect(insertLetterAtCursorPosition('niha', 'o', -1)).toBe(

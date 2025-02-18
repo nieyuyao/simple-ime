@@ -1,5 +1,5 @@
-import { hasChinese, isLatin } from '../utils/pinyin'
-import { deleteLetterAtCursorPosition, replaceTextAndUpdateCursorPosition } from '../utils/predict'
+import { hasChinese, isLatin } from '../utils'
+import { deleteLetterAtCursorPosition, replaceTextAndUpdateCursorPosition } from './predict'
 
 export function handleBackspace(text: string, originPinyin: string, cursorPosition: number) {
   if (hasChinese(text)) {
