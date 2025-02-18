@@ -1,10 +1,9 @@
+import type { Candidate } from '../src/types'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Trie } from 'dawg-lookup'
 import { compress } from './compress-dict.js'
-
-interface Candidate { w: string, f: number }
 
 function splitDict() {
   const __dirname = fileURLToPath(import.meta.url)

@@ -1,17 +1,17 @@
-export function insertCharAtCursorPosition(
+export function insertLetterAtCursorPosition(
   text: string,
-  char: string,
+  letter: string,
   cursorPosition: number,
 ): string {
   cursorPosition = Math.max(0, cursorPosition)
-  const textFront = text.substring(0, cursorPosition) + char
+  const textFront = text.substring(0, cursorPosition) + letter
   const textBehind = text.substring(cursorPosition)
   let html = `<span>${textFront}</span><span class="sime-cursor"></span>`
   html = textBehind ? `${html}<span>${textBehind}</span>` : html
   return html.trim()
 }
 
-export function deleteCharAtCursorPosition(text: string, cursorPosition: number): string {
+export function deleteLetterAtCursorPosition(text: string, cursorPosition: number): string {
   if (!text) {
     return '<span class="sime-cursor"></span>'
   }

@@ -3,18 +3,18 @@ import { getCandidates } from './engine'
 import { handleBackspace } from './handlers/backspace'
 import { handleSpecial } from './handlers/special'
 import ImeCss from './styles/index.scss?inline'
+import { isEditableElement, updateContent } from './utils/dom'
+import { dispatchCompositionEvent, dispatchInputEvent } from './utils/event'
+import { cleanSingleQuotes, hasLatin, segmentPinyinByTire } from './utils/pinyin'
 import {
   findConvertPinyinByCursorPosition,
   generateTextByCursorPosition,
-  insertCharAtCursorPosition,
+  insertLetterAtCursorPosition,
   moveCursorPositionEnd,
   moveCursorPositionLeft,
   moveCursorPositionRight,
   replaceTextAndUpdateCursorPosition,
-} from './utils/cursor'
-import { isEditableElement, updateContent } from './utils/dom'
-import { dispatchCompositionEvent, dispatchInputEvent } from './utils/event'
-import { hasLatin } from './utils/pinyin'
+} from './utils/predict'
 import { createInputView } from './views/create-input-view'
 import { createStatusBar } from './views/create-statusbar'
 
@@ -31,7 +31,7 @@ export class SimpleIme {
 
   private candsMatchOriginPinyins: string[] = []
 
-  private accMatchedPinyin = ''
+  private convertedPinyin = ''
 
   private chiMode = true
 
@@ -63,6 +63,7 @@ export class SimpleIme {
 
   private inputViewHandle?: ReturnType<typeof createInputView>
 
+  // Cursor position at composition
   private cursorPosition = 0
 
   private injectedStyleEl?: HTMLStyleElement
@@ -131,12 +132,13 @@ export class SimpleIme {
         this.clearCandidate()
         this.originPinyin = ''
         this.cursorPosition = 0
+        this.convertedPinyin = ''
         this.unconvertedPinyinStartPosition = 0
       }
       else if (this.unconvertedPinyinStartPosition >= 0) {
         this.unconvertedPinyinStartPosition = 0
         this.fetchCandidateAsync()
-        this.accMatchedPinyin = ''
+        this.convertedPinyin = ''
         dispatchCompositionEvent(this.newIn, 'compositionupdate', newText)
       }
       else {
@@ -193,18 +195,27 @@ export class SimpleIme {
       return
     }
     if (/^[a-z']$/.test(e.key)) {
+      e.preventDefault()
       if (e.key === '\'' && !this.typeOn) {
-        e.preventDefault()
         return
       }
-      e.preventDefault()
       const text = this.getPredictText()
-      const html = insertCharAtCursorPosition(text, e.key, this.cursorPosition)
+      const html = insertLetterAtCursorPosition(text, e.key, this.cursorPosition)
       this.setPredictText(html)
       this.cursorPosition++
       const newText = this.getPredictText()
-      const insertPosition = this.cursorPosition + (this.accMatchedPinyin.length - this.unconvertedPinyinStartPosition)
-      this.originPinyin = this.accMatchedPinyin + newText.substring(this.unconvertedPinyinStartPosition, insertPosition) + newText.substring(insertPosition)
+      const unConverted = newText.substring(this.unconvertedPinyinStartPosition)
+      const toSegmented = unConverted.substring(this.unconvertedPinyinStartPosition, this.cursorPosition)
+      if (toSegmented) {
+        const segmented = segmentPinyinByTire(toSegmented)
+        const { cursorPosition: newCursorPosition, html } = replaceTextAndUpdateCursorPosition(newText, this.unconvertedPinyinStartPosition, this.cursorPosition - this.unconvertedPinyinStartPosition, segmented, this.cursorPosition)
+        this.setPredictText(html)
+        this.cursorPosition = newCursorPosition
+        this.originPinyin = this.convertedPinyin + segmented + newText.substring(this.cursorPosition)
+      }
+      else {
+        this.originPinyin = this.convertedPinyin + unConverted
+      }
       this.fetchCandidateAsync()
       if (this.typeOn) {
         dispatchCompositionEvent(this.newIn, 'compositionupdate', newText)
@@ -341,12 +352,12 @@ export class SimpleIme {
     updateContent(this.newIn, text)
     dispatchInputEvent(this.newIn, 'input')
     this.originPinyin = ''
-    this.accMatchedPinyin = ''
+    this.convertedPinyin = ''
     this.setPredictText('')
   }
 
   private endComposition() {
-    const text = this.getPredictText()
+    const text = cleanSingleQuotes(this.getPredictText())
     this.commitText(text)
     this.hideComposition()
     this.clearCandidate()
@@ -430,7 +441,7 @@ export class SimpleIme {
     const text = this.getPredictText()
     const matchedLength = this.getNthMatchLen(selection)
     const matchedOriginPinyin = this.getNthMatchOriginPinyin(selection)
-    this.accMatchedPinyin += matchedOriginPinyin
+    this.convertedPinyin += matchedOriginPinyin
     let newText = ''
     newText = text.substring(0, this.unconvertedPinyinStartPosition)
     newText += cand
@@ -632,7 +643,7 @@ export class SimpleIme {
   turnOff() {
     this.isOn = false
     this.setPredictText('')
-    this.accMatchedPinyin = ''
+    this.convertedPinyin = ''
     this.unconvertedPinyinStartPosition = 0
     this.cursorPosition = 0
     this.hideComposition()

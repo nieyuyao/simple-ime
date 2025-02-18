@@ -14,3 +14,9 @@ export interface SimpleImeInstance {
   /** 销毁输入法实例 */
   dispose: () => void
 }
+
+export interface SimpleImeOptions {
+  experimentalAutoSegment: boolean
+}
+
+export interface Candidate { w: string, f: number }

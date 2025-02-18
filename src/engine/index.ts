@@ -4,11 +4,11 @@ import packedTrieTxt from '../data/packed-trie.txt?raw'
 
 type Dict = Record<string, string>
 
-const trie = new PTrie(packedTrieTxt)
-
-const dict: Dict = JSON.parse(dictTxt)
-
 type ResultList = ({ w: string, f: number, matchLen: number })[]
+
+export const dict: Dict = JSON.parse(dictTxt)
+
+export const trie = new PTrie(packedTrieTxt)
 
 export function splitDictContent(content: string, list: ResultList, matchLen: number) {
   const reg = /(\D+)(\d+)/g

@@ -1,5 +1,5 @@
-import { deleteCharAtCursorPosition, replaceTextAndUpdateCursorPosition } from '../utils/cursor'
 import { hasChinese, isLatin } from '../utils/pinyin'
+import { deleteLetterAtCursorPosition, replaceTextAndUpdateCursorPosition } from '../utils/predict'
 
 export function handleBackspace(text: string, originPinyin: string, cursorPosition: number) {
   if (hasChinese(text)) {
@@ -20,7 +20,7 @@ export function handleBackspace(text: string, originPinyin: string, cursorPositi
     return { html, newCursorPosition }
   }
   else {
-    const html = deleteCharAtCursorPosition(text, cursorPosition)
+    const html = deleteLetterAtCursorPosition(text, cursorPosition)
     return { html, newCursorPosition: Math.max(0, cursorPosition - 1) }
   }
 }
