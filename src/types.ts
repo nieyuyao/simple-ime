@@ -15,4 +15,8 @@ export interface SimpleImeInstance {
   dispose: () => void
 }
 
+export interface SimpleImeOptions {
+  experimentalAutoSegment: boolean
+}
+
 export interface Candidate { w: string, f: number }

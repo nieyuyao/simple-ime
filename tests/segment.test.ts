@@ -11,6 +11,7 @@ it('segment pinyin according to trie', () => {
   expect(segmentPinyinByTire('xi\'an')).toBe('xi\'an')
   expect(segmentPinyinByTire('woqu')).toBe('woqu')
   expect(segmentPinyinByTire('iii')).toBe('i\'i\'i')
+  expect(segmentPinyinByTire('\'\'nihao')).toBe('\'\'nihao')
 })
 
 it('segment pinyin according to dict', () => {

@@ -56,8 +56,7 @@ function joinSegments(segments: string[]) {
 }
 
 /**
- * Segment whole pinyin
- * @example nihaode => nihao'de
+ * Segment whole pinyin according to tire
  */
 export function segmentPinyinByTire(pinyin: string): string {
   return pinyin.replace(/[^']+/g, (matched) => {
@@ -95,6 +94,9 @@ const pinyinFrequencyDict = Object.keys(dict).reduce((acc, pinyin) => {
   return acc
 }, {} as Record<string, number>)
 
+/**
+ * Segment whole pinyin according to phrase frequency
+ */
 export function segmentPinyinByDict(pinyin: string): string {
   return pinyin.replace(/[^']+/g, (matched) => {
     const segments: string[] = []
@@ -127,4 +129,9 @@ export function segmentPinyinByDict(pinyin: string): string {
     }
     return segments.length <= 0 ? matched : joinSegments(segments)
   })
+}
+
+export function cleanSingleQuotes(text: string): string {
+  const reg = /(?<!')'(?!')/g
+  return text.replace(reg, '')
 }
