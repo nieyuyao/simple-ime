@@ -5,4 +5,4 @@ import router from './router'
 
 createApp(App).use(router).mount('#app')
 
-createSimpleIme({ experimentalAutoSegment: true }).turnOn()
+createSimpleIme().turnOn()

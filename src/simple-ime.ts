@@ -5,7 +5,7 @@ import { handleSpecial } from './handlers/special'
 import ImeCss from './styles/index.scss?inline'
 import { isEditableElement, updateContent } from './utils/dom'
 import { dispatchCompositionEvent, dispatchInputEvent } from './utils/event'
-import { cleanSingleQuotes, hasLatin, segmentPinyinByTire } from './utils/pinyin'
+import { hasLatin } from './utils/pinyin'
 import {
   findConvertPinyinByCursorPosition,
   generateTextByCursorPosition,
@@ -206,17 +206,19 @@ export class SimpleIme {
       this.cursorPosition++
       const newText = this.getPredictText()
       const unConverted = newText.substring(this.unconvertedPinyinStartPosition)
-      const toSegmented = unConverted.substring(this.unconvertedPinyinStartPosition, this.cursorPosition)
-      if (toSegmented) {
-        const segmented = segmentPinyinByTire(toSegmented)
-        const { cursorPosition: newCursorPosition, html } = replaceTextAndUpdateCursorPosition(newText, this.unconvertedPinyinStartPosition, this.cursorPosition - this.unconvertedPinyinStartPosition, segmented, this.cursorPosition)
-        this.setPredictText(html)
-        this.cursorPosition = newCursorPosition
-        this.originPinyin = this.convertedPinyin + segmented + newText.substring(this.cursorPosition)
-      }
-      else {
-        this.originPinyin = this.convertedPinyin + unConverted
-      }
+      //
+      // const toSegmented = unConverted.substring(this.unconvertedPinyinStartPosition, this.cursorPosition)
+      // if (toSegmented) {
+      //   const segmented = segmentPinyinByTire(toSegmented)
+      //   const { cursorPosition: newCursorPosition, html } = replaceTextAndUpdateCursorPosition(newText, this.unconvertedPinyinStartPosition, this.cursorPosition - this.unconvertedPinyinStartPosition, segmented, this.cursorPosition)
+      //   this.setPredictText(html)
+      //   this.cursorPosition = newCursorPosition
+      //   this.originPinyin = this.convertedPinyin + segmented + newText.substring(this.cursorPosition)
+      // }
+      // else {
+      //   this.originPinyin = this.convertedPinyin + unConverted
+      // }
+      this.originPinyin = this.convertedPinyin + unConverted
       this.fetchCandidateAsync()
       if (this.typeOn) {
         dispatchCompositionEvent(this.newIn, 'compositionupdate', newText)
@@ -358,7 +360,7 @@ export class SimpleIme {
   }
 
   private endComposition() {
-    const text = cleanSingleQuotes(this.getPredictText())
+    const text = this.getPredictText()
     this.commitText(text)
     this.hideComposition()
     this.clearCandidate()
