@@ -599,7 +599,6 @@ export class SimpleIme {
         }
         el.style.top = `${newTop}px`
         el.style.left = `${newLeft}px`
-        console.log(newTop)
         this.compositionElSize = { width: elWidth, height: elHeight, x: newLeft, y: newTop }
         this.updateCompositionPosition()
       }
