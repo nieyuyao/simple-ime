@@ -2,7 +2,7 @@ import { version } from '../../package.json'
 import { getCandidates } from '../engine'
 import ImeCss from '../styles/index.scss?inline'
 import { hasLatin } from '../utils'
-import { createInputView } from '../views/create-input-view'
+import { createComposition } from '../views/create-composition'
 import { createStatusBar } from '../views/create-statusbar'
 import { handleBackspace } from './backspace'
 import { isEditableElement, updateContent } from './dom'
@@ -61,7 +61,7 @@ export class Ime {
 
   private statusHandle?: ReturnType<typeof createStatusBar>
 
-  private inputViewHandle?: ReturnType<typeof createInputView>
+  private compositionHandle?: ReturnType<typeof createComposition>
 
   // Cursor position at composition
   private cursorPosition = 0
@@ -602,7 +602,7 @@ export class Ime {
     if (!this.isOn) {
       this.statusHandle.hide()
     }
-    this.inputViewHandle = createInputView(
+    this.compositionHandle = createComposition(
       (e, index) => {
         e.preventDefault()
         this.selectCandidate(index + 1)
@@ -646,7 +646,7 @@ export class Ime {
 
   dispose() {
     this.statusHandle?.dispose()
-    this.inputViewHandle?.dispose()
+    this.compositionHandle?.dispose()
     this.injectedStyleEl?.remove()
     this.unbindEvents()
     clearTimeout(this.adjustCompositionElTimeoutId)

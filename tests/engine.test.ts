@@ -1,9 +1,76 @@
 import { describe, expect, it } from 'vitest'
-import { getCandidates } from '../src/engine'
+import { mergeSegments, forwardLookupCandidates, backwardLookupCandidates, requestCandidates } from '../src/engine'
 
-describe('test engine output', () => {
-  it('getCandidates', () => {
-    expect(getCandidates('i')).toEqual([['i', 'I'], [1, 1]])
-    expect(getCandidates('nihaode')).toEqual([['你好'], [5]])
+describe('test engine', () => {
+  it('mergeSegments', () => {
+    expect(mergeSegments(['ni', 'hao'], 0, 1).pinyin).toBe('nihao')
+    expect(mergeSegments(['ni\'', 'hao'], 0, 1).pinyin).toBe('nihao')
+    expect(mergeSegments(['\'ni\'', 'hao'], 0, 1).pinyin).toBe('nihao')
+    expect(mergeSegments(['\'ni\'', '\'hao'], 0, 1).pinyin).toBe('nihao')
+    expect(mergeSegments(['\'\'', '\'\''], 0, 1).pinyin).toBe('')
+  })
+
+  it('forwardLookupCandidates', () => {
+    // console.log(forwardLookupCandidates(['ni']))
+    // console.log(forwardLookupCandidates(['zen', 'me', 'yang']))
+    // console.log(forwardLookupCandidates(['ni', 'ha', 'o']))
+    // console.log(forwardLookupCandidates(['bu', 'zhi', 'dao']))
+    // console.log(requestCandidates('ni\'hao'))
+    // console.log(requestCandidates('nihaode'))
+    // console.log(requestCandidates('nihaodene'))
+    // console.log(requestCandidates('buhaoyong'))
+    // console.log(requestCandidates('xi\'an'))
+    // console.log(requestCandidates('gongnengbuzenmeyang'))
+    // console.log(requestCandidates('wobuguan\'nibunengzhemeban'))
+    // console.log(requestCandidates('iii'))
+    // console.log(requestCandidates('niiii'))
+    // console.log(requestCandidates('niiiihaode'))
+    // console.log(requestCandidates('kongjianzhan'))
+
+    // console.log(forwardLookupCandidates(['ni', 'hao']))
+    // console.log(forwardLookupCandidates(['m', 'y']))
+  })
+
+  it('backwardLookupCandidates', () => {
+    // console.log(requestCandidates('ni'))
+    // console.log(backwardLookupCandidates(['ni', 'ha', 'o']))
+    // console.log(backwardLookupCandidates(['bu', 'zhi', 'dao']))
+    // console.log(backwardLookupCandidates(['zen', 'me', 'yang']))
+    // console.log(requestCandidates('ni\'hao'))
+    // console.log(requestCandidates('nihaode'))
+    // console.log(requestCandidates('nihaodene'))
+    // console.log(requestCandidates('buhaoyong'))
+    // console.log(requestCandidates('xi\'an'))
+    // console.log(requestCandidates('gongnengbuzenmeyang'))
+    // console.log(requestCandidates('wobuguan\'nibunengzhemeban'))
+    // console.log(requestCandidates('iii'))
+    // console.log(requestCandidates('niiii'))
+    // console.log(requestCandidates('niiiihaode'))
+    // console.log(requestCandidates('kongjianzhan'))
+    // console.log(backwardLookupCandidates(['ni', 'hao']))
+    // console.log(backwardLookupCandidates(['m', 'y']))
+  })
+
+  it('requestCandidates', () => {
+    // console.log(requestCandidates('ni'))
+    // console.log(requestCandidates('nihao'))
+    console.log(requestCandidates('ni\'hao'))
+    // console.log(requestCandidates('buzhidao'))
+    // console.log(requestCandidates('iiiii'))
+    // console.log(requestCandidates('buzhidao'))
+    // console.log(backwardLookupCandidates(['zen', 'me', 'yang']))
+    // console.log(requestCandidates('ni\'hao'))
+    // console.log(requestCandidates('nihaode'))
+    // console.log(requestCandidates('nihaodene'))
+    // console.log(requestCandidates('buhaoyong'))
+    // console.log(requestCandidates('xi\'an'))
+    // console.log(requestCandidates('gongnengbuzenmeyang'))
+    // console.log(requestCandidates('wobuguan\'nibunengzhemeban'))
+    // console.log(requestCandidates('iii'))
+    // console.log(requestCandidates('niiii'))
+    // console.log(requestCandidates('niiiihaode'))
+    // console.log(requestCandidates('kongjianzhan'))
+    // console.log(requestCandidates('nihao'))
+    // console.log(backwardLookupCandidates(['m', 'y']))
   })
 })
