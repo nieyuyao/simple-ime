@@ -33,13 +33,13 @@ export class SimpleIme {
 
   private convertedPinyin = ''
 
-  private chiMode = true
+  private chiMode = false
 
   private flag = false
 
-  private method = 1
-
   private newIn = document.activeElement || document.body
+
+  private method = 0
 
   /**
    * punct = 0 => full width punctuation
@@ -182,8 +182,8 @@ export class SimpleIme {
     if (!this.isOn || !this.newIn) {
       return
     }
-    if ((this.shape === 0 || this.punct === 0) && !this.typeOn) {
-      if (this.shape !== 1 || /[.;]/.test(e.key)) {
+    if ((this.shape === 1 || this.punct === 1) && !this.typeOn) {
+      if (this.shape === 1 || /[.,]/.test(e.key)) {
         const converted = handleSpecial(e.key)
         if (converted) {
           this.commitText(converted)

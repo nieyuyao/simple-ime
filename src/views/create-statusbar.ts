@@ -73,14 +73,14 @@ export function createStatusBar(
   const statusbarEl = document.createElement('div')
   statusbarEl.id = 'sime-status-bar'
   const contentHtml = statusContentHtml
-    .replace('{pinyinIcon}', () => chIcon)
-    .replace('{shapeIcon}', () => quanjiaoIcon)
-    .replace('{punctIcon}', () => punctZhIcon)
+    .replace('{pinyinIcon}', () => enIcon)
+    .replace('{shapeIcon}', () => banjiaoIcon)
+    .replace('{punctIcon}', () => punctEnIcon)
     .replace('{dragIcon}', dragIcon)
   statusbarEl.innerHTML = contentHtml
-  const methodIcons = [chIcon, enIcon]
-  const shapeIcons = [quanjiaoIcon, banjiaoIcon]
-  const punctIcons = [punctZhIcon, punctEnIcon]
+  const methodIcons = [enIcon, chIcon]
+  const shapeIcons = [banjiaoIcon, quanjiaoIcon]
+  const punctIcons = [punctEnIcon, punctZhIcon]
 
   let dragDisposer: ReturnType<typeof dragStatusbar> | null = null
 

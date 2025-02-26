@@ -19,6 +19,8 @@ const specialCharMap: Record<string, string | [string, number]> = {
   '"': ['“”', 0],
   '/': '／',
   '?': '？',
+  ',': '，',
+  '.': '。',
 }
 
 export function handleSpecial(c: string): string | null {
