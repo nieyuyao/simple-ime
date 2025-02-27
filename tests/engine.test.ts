@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mergeSegments, forwardLookupCandidates, backwardLookupCandidates } from '../src/engine'
+import { backwardLookupCandidates, forwardLookupCandidates, mergeSegments } from '../src/engine'
 
 describe('test engine', () => {
   it('mergeSegments', () => {

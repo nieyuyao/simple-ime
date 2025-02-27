@@ -1,17 +1,17 @@
-import { describe, expect, it, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import {
+  clearPreeditSegments,
+  deleteLetter,
+  forceUpdateCursorPosition,
+  getCursorPosition,
   getPreeditSegments,
   insertLetter,
-  clearPreeditSegments,
-  getCursorPosition,
-  deleteLetter,
+  moveCursorPositionEnd,
   moveCursorPositionLeft,
   moveCursorPositionRight,
-  moveCursorPositionEnd,
-  splitPreeditSegmentsByCursorPosition,
   replaceSegments,
   setupPreeditSegments,
-  forceUpdateCursorPosition,
+  splitPreeditSegmentsByCursorPosition,
 } from '../src/ime/segment'
 
 describe('segment', () => {
@@ -123,6 +123,36 @@ describe('segment', () => {
     expect(splitPreeditSegmentsByCursorPosition()).toEqual({ front: 'n', behind: 'i' })
     moveCursorPositionLeft()
     expect(splitPreeditSegmentsByCursorPosition()).toEqual({ front: '', behind: 'ni' })
+    clearPreeditSegments()
+    setupPreeditSegments([
+      {
+        w: '',
+        pinyins: ['ni'],
+      },
+      {
+        w: '',
+        pinyins: ['h'],
+      },
+    ])
+    forceUpdateCursorPosition(3)
+    expect(splitPreeditSegmentsByCursorPosition()).toEqual({ front: 'ni\'h', behind: '' })
+    clearPreeditSegments()
+    setupPreeditSegments([
+      {
+        w: '',
+        pinyins: ['wo'],
+      },
+      {
+        w: '',
+        pinyins: ['wo'],
+      },
+      {
+        w: '',
+        pinyins: ['wo'],
+      },
+    ])
+    forceUpdateCursorPosition(6)
+    expect(splitPreeditSegmentsByCursorPosition()).toEqual({ front: 'wo\'wo\'wo', behind: '' })
   })
 
   it('replaceSegments', () => {

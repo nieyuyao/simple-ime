@@ -100,7 +100,8 @@ export function cut(text: string) {
       }
       if (j === i) {
         segs.push(subText.charAt(i))
-      } else {
+      }
+      else {
         i--
       }
     }

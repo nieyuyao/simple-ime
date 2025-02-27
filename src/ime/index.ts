@@ -1,30 +1,27 @@
+import type { Candidate } from '../types'
 import { version } from '../../package.json'
 import { requestCandidates } from '../engine'
 import ImeCss from '../styles/index.scss?inline'
-import { Candidate } from '../types'
-import { hasLatin } from '../utils'
 import { createComposition } from '../views/create-composition'
 import { createStatusBar } from '../views/create-statusbar'
-import { handleBackspace } from './backspace'
 import { isEditableElement, updateContent } from './dom'
 import { dispatchCompositionEvent, dispatchInputEvent } from './event'
 import {
-  generateTextByCursorPosition,
-
-  insertLetterAtCursorPosition,
+  clearPreeditSegments,
+  compositePreedit,
+  createPreeditSegment,
+  deleteLetter,
+  getPreeditSegments,
+  getUnconvertedPreeditSegmentText,
+  hasConvertedPreeditSegment,
+  insertLetter,
   moveCursorPositionEnd,
   moveCursorPositionLeft,
   moveCursorPositionRight,
-  replaceTextAndUpdateCursorPosition,
-} from './preedit'
-
-import {
+  preeditSegments2Text,
   recoverySegments,
-  replaceHistory,
-  getConvertedSegments,
-  getUnconvertedText,
-  segments2PreeditText,
-  insertLetter,
+  replaceSegments,
+  updatePreeditSegments,
 } from './segment'
 import { handleSpecial } from './special'
 
@@ -36,10 +33,6 @@ export class Ime {
   private candIndex = 0
 
   private cands: Candidate[] = []
-
-  private convertedText = ''
-
-  private unconvertedTextStartPosition = 0
 
   private chiMode = false
 
@@ -69,9 +62,6 @@ export class Ime {
 
   private compositionHandle?: ReturnType<typeof createComposition>
 
-  // Cursor position at composition
-  private cursorPosition = 0
-
   private injectedStyleEl?: HTMLStyleElement
 
   private adjustCompositionElTimeoutId = 0
@@ -79,6 +69,8 @@ export class Ime {
   private compositionElSize = { width: 0, height: 0, x: 0, y: 0 }
 
   private pressedKeys: string[] = []
+
+  private preeditEle: HTMLElement | null
 
   private injectCSS() {
     const style = document.createElement('style')
@@ -119,44 +111,37 @@ export class Ime {
       this.pressedKeys.push(e.key)
     }
     if (
-        !isOn
-        || !newIn
-        || !this.chiMode
-        || !this.typeOn
+      !isOn
+      || !newIn
+      || !this.chiMode
+      || !this.typeOn
     ) {
       return
     }
     if (e.key === 'Backspace') {
       e.preventDefault()
-      const text = this.getPreEditText()
-      const userInputText = recoverySegments()
-      const { html, newCursorPosition } = handleBackspace(text, userInputText, this.cursorPosition)
-      this.setPreEditText(html)
-      const newText = this.getPreEditText()
-      this.cursorPosition = newCursorPosition
-      if (!newText) {
-        this.hideComposition()
-        this.clearCandidate()
-        this.cursorPosition = 0
-        this.convertedText = ''
-        this.unconvertedTextStartPosition = 0
-      }
-      else if (this.unconvertedTextStartPosition >= 0) {
-        this.unconvertedTextStartPosition = 0
+      if (hasConvertedPreeditSegment()) {
+        recoverySegments()
+        moveCursorPositionEnd()
+        this.setPreEditText(compositePreedit())
         this.fetchCandidate()
-        this.convertedText = ''
-        dispatchCompositionEvent(this.newIn, 'compositionupdate', newText)
+        dispatchCompositionEvent(this.newIn, 'compositionupdate', preeditSegments2Text())
       }
       else {
+        deleteLetter()
+        if (preeditSegments2Text().length <= 0) {
+          this.endComposition()
+          return
+        }
+        this.setPreEditText(compositePreedit())
         this.fetchCandidate()
-        dispatchCompositionEvent(this.newIn, 'compositionupdate', newText)
+        dispatchCompositionEvent(this.newIn, 'compositionupdate', preeditSegments2Text())
       }
       this.updateCompositionPosition()
     }
     else if (e.code === 'Escape') {
       e.preventDefault()
       this.setPreEditText('')
-      this.cursorPosition = 0
       this.hideComposition()
       this.clearCandidate()
     }
@@ -204,18 +189,16 @@ export class Ime {
       if (e.key === '\'' && !this.typeOn) {
         return
       }
-      const text = segments2PreeditText()
-      const html = insertLetter(text, e.key, this.cursorPosition)
+      insertLetter(e.key)
+      const html = compositePreedit()
       this.setPreEditText(html)
-      this.cursorPosition++
-      this.fetchCandidate(this.getPreEditText())
-      const newText = segments2PreeditText()
+      this.fetchCandidate()
       if (this.typeOn) {
-        dispatchCompositionEvent(this.newIn, 'compositionupdate', newText)
+        dispatchCompositionEvent(this.newIn, 'compositionupdate', preeditSegments2Text())
       }
       else {
         this.showComposition()
-        dispatchCompositionEvent(this.newIn, 'compositionstart', newText)
+        dispatchCompositionEvent(this.newIn, 'compositionstart', preeditSegments2Text())
       }
       this.updateCompositionPosition()
     }
@@ -255,11 +238,11 @@ export class Ime {
     }
     else if (e.key === '[') {
       e.preventDefault()
-      this.moveCursorPositionLeft()
+      this.moveCursorLeft()
     }
     else if (e.key === ']') {
       e.preventDefault()
-      this.moveCursorPositionRight()
+      this.moveCursorRight()
     }
     else if (this.typeOn) {
       e.preventDefault()
@@ -285,6 +268,7 @@ export class Ime {
       this.setPreEditText('')
       this.hideComposition()
       this.clearCandidate()
+      clearPreeditSegments()
     }
   }
 
@@ -294,8 +278,9 @@ export class Ime {
     }
     else {
       this.setPreEditText('')
-      this.hideComposition()
+      // this.hideComposition()
       this.clearCandidate()
+      // clearPreeditSegments()
     }
   }
 
@@ -343,32 +328,28 @@ export class Ime {
   private commitText(text: string) {
     updateContent(this.newIn, text)
     dispatchInputEvent(this.newIn, 'input')
-    this.convertedText = ''
     this.setPreEditText('')
   }
 
   private endComposition() {
-    const text = segments2PreeditText()
+    const text = preeditSegments2Text()
     this.commitText(text)
     this.hideComposition()
     this.clearCandidate()
-    this.cursorPosition = 0
-    this.unconvertedTextStartPosition = 0   
+    clearPreeditSegments()
     dispatchCompositionEvent(this.newIn, 'compositionend', text)
     clearTimeout(this.adjustCompositionElTimeoutId)
   }
 
-  private fetchCandidate(text = '') {
+  private fetchCandidate() {
     this.clearCandidate()
-    text = text ? text : getUnconvertedText()
-    const { candidates, segments } = requestCandidates(text)
-    this.history = [
-      ...getConvertedHistory(this.history),
-      ...segments.map(s => ({ text: s }))
-    ]
-    console.log(text, candidates, segments, '===segments===')
+    const text = getUnconvertedPreeditSegmentText()
+    const { candidates, segments } = requestCandidates(text, 0b0001)
+    updatePreeditSegments(segments.map(seg => createPreeditSegment(seg)))
     this.setCandidates(candidates)
     this.showCandidates()
+    console.log(text, segments, getPreeditSegments())
+    this.setPreEditText(compositePreedit())
   }
 
   private getNthCandidate(n: number) {
@@ -399,40 +380,19 @@ export class Ime {
   }
 
   private selectCandidate(selection: number) {
-    // return
     if (!this.nthCandidateExists(selection)) {
       return
     }
     const cand = this.getNthCandidate(selection)
-    replaceHistory(this.history, cand)
-    const matchedOriginPinyin = cand.text
-    this.convertedText += matchedOriginPinyin
-    if (this.history[this.history.length - 1].w) {
+    replaceSegments(cand)
+    if (getUnconvertedPreeditSegmentText().length <= 0) {
       this.endComposition()
     }
     else {
-      let { html, cursorPosition } = replaceTextAndUpdateCursorPosition(
-        text,
-        this.unconvertedTextStartPosition - cand.matchLength,
-        cand.matchLength,
-        cand.text,
-        this.cursorPosition,
-      )
+      const html = compositePreedit()
       this.setPreEditText(html)
-      newText = this.getPreEditText()
-      if (!hasLatin(cand.text)) {
-        this.cursorPosition = cursorPosition
-      }
-      else {
-        this.cursorPosition = moveCursorPositionEnd(newText)
-        if (this.cursorPosition !== cursorPosition) {
-          html = generateTextByCursorPosition(text, this.cursorPosition)
-          this.setPreEditText(html)
-        }
-      }
-      this.updateCompositionPosition()
       this.fetchCandidate()
-      dispatchCompositionEvent(this.newIn, 'compositionupdate', newText)
+      dispatchCompositionEvent(this.newIn, 'compositionupdate', preeditSegments2Text())
     }
   }
 
@@ -440,14 +400,9 @@ export class Ime {
     this.cands = candidates
   }
 
-  private getPreEditText() { 
-    return this.preeditEle?.innerText || ''
-  }
-
   private setPreEditText(html: string) {
     if (this.preeditEle) {
       this.preeditEle.innerHTML = html
-      return
     }
   }
 
@@ -498,7 +453,6 @@ export class Ime {
       this.setPreEditText('')
       this.hideComposition()
       this.clearCandidate()
-      this.cursorPosition = 0
     }
   }
 
@@ -510,29 +464,16 @@ export class Ime {
     this.punct = (this.punct + 1) % 2
   }
 
-  private moveCursorPositionLeft() {
-    if (this.cursorPosition - 1 < 0) {
-      return
-    }
-    const text = this.getPreEditText()
-    const oldCursorPosition = this.cursorPosition
-    this.cursorPosition = moveCursorPositionLeft(this.unconvertedTextStartPosition, oldCursorPosition)
-    if (this.cursorPosition === oldCursorPosition) {
-      return
-    }
-    const html = generateTextByCursorPosition(text, this.cursorPosition)
+  private moveCursorLeft() {
+    moveCursorPositionLeft()
+    const html = compositePreedit()
     this.setPreEditText(html)
     this.updateCompositionPosition()
   }
 
-  private moveCursorPositionRight() {
-    const text = this.getPreEditText()
-    const oldCursorPosition = this.cursorPosition
-    this.cursorPosition = moveCursorPositionRight(text, oldCursorPosition)
-    if (this.cursorPosition === oldCursorPosition) {
-      return
-    }
-    const html = generateTextByCursorPosition(text, this.cursorPosition)
+  private moveCursorRight() {
+    moveCursorPositionRight()
+    const html = compositePreedit()
     this.setPreEditText(html)
     this.updateCompositionPosition()
   }
@@ -611,9 +552,6 @@ export class Ime {
   turnOff() {
     this.isOn = false
     this.setPreEditText('')
-    this.convertedText = ''
-    this.unconvertedTextStartPosition = 0
-    this.cursorPosition = 0
     this.hideComposition()
     this.clearCandidate()
     this.hideStatus()

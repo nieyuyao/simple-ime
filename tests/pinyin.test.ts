@@ -24,6 +24,7 @@ it('split text according to pinyin dict', () => {
   expect(cut('niaoiii')).toEqual([['niao', 'i', 'i', 'i']])
   expect(cut('qiiang')).toEqual([['qi', 'i', 'ang']])
   expect(cut('qiang')).toEqual([['qi', 'ang'], ['qiang']])
+  expect(cut('wowowo')).toEqual([['wo', 'wo', 'wo']])
 })
 
 it('split text has quotes', () => {

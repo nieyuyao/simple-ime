@@ -1,4 +1,4 @@
-import { Candidate } from "../types"
+import type { Candidate } from '../types'
 
 interface PreeditSegment {
   w?: string
@@ -10,8 +10,8 @@ let preeditSegments: PreeditSegment[] = []
 let cursorPosition = 0
 
 export function recoverySegments() {
-  const newSegs: PreeditSegment[] = [] = []
-  preeditSegments.forEach(seg => {
+  const newSegs: PreeditSegment[] = []
+  preeditSegments.forEach((seg) => {
     if (seg.w) {
       seg.pinyins.forEach((split) => {
         newSegs.push({
@@ -23,7 +23,7 @@ export function recoverySegments() {
     else {
       newSegs.push({
         w: '',
-        pinyins: seg.pinyins
+        pinyins: seg.pinyins,
       })
     }
   })
@@ -42,11 +42,15 @@ export function getPreeditSegmentsLength() {
   }, 0)
 }
 
-export function getUnconvertedText() {
+export function getUnconvertedPreeditSegmentText() {
   return preeditSegments.filter(h => !h.w).reduce((text, seg) => {
     text += seg.pinyins.join('')
     return text
   }, '')
+}
+
+export function hasConvertedPreeditSegment() {
+  return !!preeditSegments.find(seg => seg.w)
 }
 
 export function getConvertedSegments() {
@@ -82,13 +86,13 @@ export function replaceSegments(cand: Candidate) {
   preeditSegments.splice(j, i + 1, { w: cand.w, pinyins })
 }
 
-export function insertLetter(c: string)  {
+export function insertLetter(c: string) {
   if (preeditSegments.length <= 0) {
     preeditSegments = [
       {
         w: '',
-        pinyins: [c]
-      }
+        pinyins: [c],
+      },
     ]
     cursorPosition++
     return
@@ -118,7 +122,7 @@ export function insertLetter(c: string)  {
   }
 }
 
-export function deleteLetter()  {
+export function deleteLetter() {
   let pos = 0
   let updated = false
   for (let i = 0; i < preeditSegments.length; i++) {
@@ -167,11 +171,16 @@ export function moveCursorPositionEnd() {
   cursorPosition = getPreeditSegmentsLength()
 }
 
-const joinPreedit = (s: string, joined: string, isEnd = false) => {
+function joinPreedit(s: string, joined: string) {
   if (s.endsWith('\'') || joined.startsWith('\'')) {
     s += joined
   }
-  s += isEnd ? joined : `${joined}'`
+  else if (!s) {
+    s = joined
+  }
+  else {
+    s += `'${joined}`
+  }
   return s
 }
 
@@ -188,19 +197,19 @@ export function splitPreeditSegmentsByCursorPosition() {
     else {
       const splits = seg.pinyins
       for (let j = 0; j < splits.length; j++) {
-        const isEnd = i === preeditSegments.length - 1 && j === splits.length - 1
         const split = splits[j]
         const nextPos = pos + split.length
         if (nextPos > cursorPosition) {
           if (!behind) {
-            front = joinPreedit(front, split.slice(0, cursorPosition - pos), isEnd)
-            behind = joinPreedit(behind, split.slice(cursorPosition - pos), isEnd)
+            front = joinPreedit(front, split.slice(0, cursorPosition - pos))
+            behind = joinPreedit(behind, split.slice(cursorPosition - pos))
           }
           else {
-            behind = joinPreedit(behind, split, isEnd)
+            behind = joinPreedit(behind, split)
           }
-        } else {
-          front = joinPreedit(front, split, isEnd)
+        }
+        else {
+          front = joinPreedit(front, split)
         }
         pos = nextPos
       }
@@ -226,6 +235,31 @@ export function getPreeditSegments() {
 
 export function getCursorPosition() {
   return cursorPosition
+}
+
+export function updatePreeditSegments(segments: PreeditSegment[]) {
+  let i = 0
+  for (; i < preeditSegments.length; i++) {
+    if (!preeditSegments[i].w) {
+      break
+    }
+  }
+  preeditSegments.splice(i, preeditSegments.length - i)
+  preeditSegments.push(...segments)
+}
+
+export function createPreeditSegment(pinyin: string) {
+  return {
+    w: '',
+    pinyins: [pinyin],
+  }
+}
+
+export function preeditSegments2Text() {
+  return preeditSegments.reduce((text, seg) => {
+    text += seg.w ? seg.w : seg.pinyins.join('')
+    return text
+  }, '')
 }
 
 export function setupPreeditSegments(segments: PreeditSegment[], cursorPos = 0) {
