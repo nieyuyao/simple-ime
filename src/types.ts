@@ -15,4 +15,8 @@ export interface SimpleImeInstance {
   dispose: () => void
 }
 
-export interface Candidate { w: string, f: number }
+export interface Candidate {
+  f: number
+  w: string
+  matchLength: number
+}

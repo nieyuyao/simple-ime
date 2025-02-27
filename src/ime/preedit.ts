@@ -83,32 +83,3 @@ export function moveCursorPositionRight(text: string, cursorPosition: number): n
 export function moveCursorPositionEnd(text: string): number {
   return text.length
 }
-
-export function findConvertPinyinByCursorPosition(text: string, startPosition: number, cursorPosition: number): {
-  origin: string
-  pinyin: string
-} {
-  const quote = '\''
-  let prefixQuotes = 0
-  let suffixQuotes = 0
-  let pinyin = ''
-  for (let i = startPosition; i < text.length; i++) {
-    if (i === cursorPosition && pinyin) {
-      break
-    }
-    const c = text.charAt(i)
-    if (c !== '\'') {
-      if (suffixQuotes) {
-        break
-      }
-      pinyin += c
-    }
-    else if (pinyin) {
-      suffixQuotes++
-    }
-    else {
-      prefixQuotes++
-    }
-  }
-  return { origin: `${quote.repeat(prefixQuotes)}${pinyin}${quote.repeat(suffixQuotes)}`, pinyin }
-}

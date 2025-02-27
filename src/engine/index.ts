@@ -2,6 +2,7 @@ import { PTrie } from 'dawg-lookup'
 import dictTxt from '../data/dict.txt?raw'
 import packedTrieTxt from '../data/packed-trie.txt?raw'
 import { cut } from './pinyin'
+import type { Candidate } from '../types'
 
 enum Category {
   Backward = 0b0001,
@@ -9,12 +10,6 @@ enum Category {
 }
 
 type Dict = Record<string, string>
-
-interface Candidate {
-  w: string
-  matchLength: number
-  f: number
-}
 
 interface DictWord {
   w: string
@@ -47,15 +42,15 @@ export function mergeSegments(
   segments: string[],
   start = 0,
   end = 0
-): { pinyin: string; originalPinyin: string } {
-  let originalPinyin = ''
+): { pinyin: string; text: string } {
+  let text = ''
   let pinyin = ''
   for (let i = start; i <= end; i++) {
     const matched = segments[i].match(/[^']+/)
     pinyin += matched ? matched[0] : ''
-    originalPinyin += segments[i]
+    text += segments[i]
   }
-  return { pinyin, originalPinyin }
+  return { pinyin, text }
 }
 
 const joinCandidates = (
@@ -82,7 +77,7 @@ export function backwardLookupCandidates(segments: string[], end: number): Candi
   let collect: Candidate[] = []
   let j = 0
   for (let i = end; i >= j; i--) {
-    const { pinyin, originalPinyin } = mergeSegments(segments, j, i)
+    const { pinyin, text } = mergeSegments(segments, j, i)
     let words = getWordsFormDict(pinyin)
     if (i === j) {
       words = words.length ? words : [
@@ -94,7 +89,7 @@ export function backwardLookupCandidates(segments: string[], end: number): Candi
       collect = joinCandidates(collect, words.map(w => {
         return {
           ...w,
-          matchLength: originalPinyin.length
+          matchLength: text.length
         }
       }))
       j = i + 1
@@ -104,7 +99,7 @@ export function backwardLookupCandidates(segments: string[], end: number): Candi
       collect = joinCandidates(collect, words.map(w => {
         return {
           ...w,
-          matchLength: originalPinyin.length
+          matchLength: text.length
         }
       }))
       j = i + 1
@@ -119,10 +114,10 @@ export function forwardLookupCandidates(segments: string[], end: number): Candid
   let j = 0
   let collect: Candidate[] = []
   for (let i = 0; i <= end; i++) {
-    const { pinyin: combinePinyin, originalPinyin } = mergeSegments(segments, j, i)
+    const { pinyin: combinePinyin, text } = mergeSegments(segments, j, i)
     const words = getWordsFormDict(combinePinyin)
     if (words.length <= 0) {
-      const { pinyin: lastCombinePinyin, originalPinyin: lastCombineOriginalPinyin } = mergeSegments(segments, j, i - 1)
+      const { pinyin: lastCombinePinyin, text: lastCombineText } = mergeSegments(segments, j, i - 1)
       let lastWords =  getWordsFormDict(lastCombinePinyin)
       if (lastWords.length <= 0) {
         lastWords = [
@@ -135,11 +130,10 @@ export function forwardLookupCandidates(segments: string[], end: number): Candid
       collect = joinCandidates(collect, getWordsFormDict(lastCombinePinyin).map(w => {
         return {
           ...w,
-          matchLength: lastCombineOriginalPinyin.length
+          matchLength: lastCombineText.length
         }
       }))
       j = i
-
       if (i === end) {
         const matched = segments[i].match(/[^']+/)
         collect = joinCandidates(collect, [
@@ -155,7 +149,8 @@ export function forwardLookupCandidates(segments: string[], end: number): Candid
       collect = joinCandidates(collect, words.map(w => {
         return {
           ...w,
-          matchLength: originalPinyin.length
+          text,
+          matchLength: text.length
         }
       }))
     }
@@ -166,7 +161,10 @@ export function forwardLookupCandidates(segments: string[], end: number): Candid
 export function requestCandidates(
   text: string,
   category: number = Category.Backward | Category.Forward
-): Candidate[] {
+): {
+  segments: string[]
+  candidates: Candidate[] 
+} {
   const segmentsList = cut(text)
   segmentsList.sort((a, b) => a.length - b.length)
   const segments = segmentsList[0]
@@ -193,5 +191,8 @@ export function requestCandidates(
     return true
   })
 
-  return result.sort((a, b) => b.f - a.f)
+  return {
+    segments,
+    candidates: result.sort((a, b) => b.f - a.f)
+  }
 }

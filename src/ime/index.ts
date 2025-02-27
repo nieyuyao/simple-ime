@@ -1,6 +1,7 @@
 import { version } from '../../package.json'
-import { getCandidates } from '../engine'
+import { requestCandidates } from '../engine'
 import ImeCss from '../styles/index.scss?inline'
+import { Candidate } from '../types'
 import { hasLatin } from '../utils'
 import { createComposition } from '../views/create-composition'
 import { createStatusBar } from '../views/create-statusbar'
@@ -8,30 +9,37 @@ import { handleBackspace } from './backspace'
 import { isEditableElement, updateContent } from './dom'
 import { dispatchCompositionEvent, dispatchInputEvent } from './event'
 import {
-  findConvertPinyinByCursorPosition,
   generateTextByCursorPosition,
+
   insertLetterAtCursorPosition,
   moveCursorPositionEnd,
   moveCursorPositionLeft,
   moveCursorPositionRight,
   replaceTextAndUpdateCursorPosition,
 } from './preedit'
+
+import {
+  recoverySegments,
+  replaceHistory,
+  getConvertedSegments,
+  getUnconvertedText,
+  segments2PreeditText,
+  insertLetter,
+} from './segment'
 import { handleSpecial } from './special'
 
 export class Ime {
   version = version
 
-  private candPage = 0
+  private page = 0
 
   private candIndex = 0
 
-  private cands: string[] = []
+  private cands: Candidate[] = []
 
-  private candsMatchLens: number[] = []
+  private convertedText = ''
 
-  private candsMatchOriginPinyins: string[] = []
-
-  private convertedPinyin = ''
+  private unconvertedTextStartPosition = 0
 
   private chiMode = false
 
@@ -57,8 +65,6 @@ export class Ime {
 
   private typeOn = false
 
-  private originPinyin = ''
-
   private statusHandle?: ReturnType<typeof createStatusBar>
 
   private compositionHandle?: ReturnType<typeof createComposition>
@@ -73,8 +79,6 @@ export class Ime {
   private compositionElSize = { width: 0, height: 0, x: 0, y: 0 }
 
   private pressedKeys: string[] = []
-
-  private unconvertedPinyinStartPosition = 0
 
   private injectCSS() {
     const style = document.createElement('style')
@@ -110,41 +114,41 @@ export class Ime {
   }
 
   private handleKeyDownEvent = (e: KeyboardEvent) => {
-    const { isOn, newIn, originPinyin } = this
+    const { isOn, newIn } = this
     if (this.pressedKeys.length <= 2) {
       this.pressedKeys.push(e.key)
     }
-    if (!isOn || !newIn) {
-      return
-    }
-    if (!this.chiMode || !this.typeOn) {
+    if (
+        !isOn
+        || !newIn
+        || !this.chiMode
+        || !this.typeOn
+    ) {
       return
     }
     if (e.key === 'Backspace') {
       e.preventDefault()
       const text = this.getPreEditText()
-      const { html, newCursorPosition } = handleBackspace(text, originPinyin, this.cursorPosition)
+      const userInputText = recoverySegments()
+      const { html, newCursorPosition } = handleBackspace(text, userInputText, this.cursorPosition)
       this.setPreEditText(html)
       const newText = this.getPreEditText()
       this.cursorPosition = newCursorPosition
       if (!newText) {
         this.hideComposition()
         this.clearCandidate()
-        this.originPinyin = ''
         this.cursorPosition = 0
-        this.convertedPinyin = ''
-        this.unconvertedPinyinStartPosition = 0
+        this.convertedText = ''
+        this.unconvertedTextStartPosition = 0
       }
-      else if (this.unconvertedPinyinStartPosition >= 0) {
-        this.unconvertedPinyinStartPosition = 0
-        this.fetchCandidateAsync()
-        this.convertedPinyin = ''
-        this.originPinyin = newText
+      else if (this.unconvertedTextStartPosition >= 0) {
+        this.unconvertedTextStartPosition = 0
+        this.fetchCandidate()
+        this.convertedText = ''
         dispatchCompositionEvent(this.newIn, 'compositionupdate', newText)
       }
       else {
-        this.originPinyin = newText
-        this.fetchCandidateAsync()
+        this.fetchCandidate()
         dispatchCompositionEvent(this.newIn, 'compositionupdate', newText)
       }
       this.updateCompositionPosition()
@@ -200,14 +204,12 @@ export class Ime {
       if (e.key === '\'' && !this.typeOn) {
         return
       }
-      const text = this.getPreEditText()
-      const html = insertLetterAtCursorPosition(text, e.key, this.cursorPosition)
+      const text = segments2PreeditText()
+      const html = insertLetter(text, e.key, this.cursorPosition)
       this.setPreEditText(html)
       this.cursorPosition++
-      const newText = this.getPreEditText()
-      const unConverted = newText.substring(this.unconvertedPinyinStartPosition)
-      this.originPinyin = this.convertedPinyin + unConverted
-      this.fetchCandidateAsync()
+      this.fetchCandidate(this.getPreEditText())
+      const newText = segments2PreeditText()
       if (this.typeOn) {
         dispatchCompositionEvent(this.newIn, 'compositionupdate', newText)
       }
@@ -300,7 +302,7 @@ export class Ime {
   private candidatePrev() {
     this.candIndex = this.candIndex - 1 >= 0 ? this.candIndex - 1 : 0
     if (this.candIndex % 5 === 4) {
-      this.candPage = this.candPage - 1 >= 0 ? this.candPage - 1 : 0
+      this.page = this.page - 1 >= 0 ? this.page - 1 : 0
     }
     this.showCandidates()
   }
@@ -309,101 +311,71 @@ export class Ime {
     this.candIndex
       = this.candIndex + 1 <= this.cands.length - 1 ? this.candIndex + 1 : this.cands.length - 1
     if (this.candIndex % 5 === 0) {
-      this.candPage
-        = this.candPage + 1 < this.cands.length / 5
-          ? this.candPage + 1
+      this.page
+        = this.page + 1 < this.cands.length / 5
+          ? this.page + 1
           : Math.floor(this.cands.length / 5)
     }
     this.showCandidates()
   }
 
   private candidatePageUp() {
-    this.candIndex = this.candPage - 1 >= 0 ? this.candIndex - 5 : this.candIndex
-    this.candPage = this.candPage - 1 >= 0 ? this.candPage - 1 : 0
+    this.candIndex = this.page - 1 >= 0 ? this.candIndex - 5 : this.candIndex
+    this.page = this.page - 1 >= 0 ? this.page - 1 : 0
     this.showCandidates()
   }
 
   private candidatePageDown() {
-    this.candIndex = this.candPage + 1 < this.cands.length / 5 ? this.candIndex + 5 : this.candIndex
-    this.candPage
-      = this.candPage + 1 < this.cands.length / 5
-        ? this.candPage + 1
+    this.candIndex = this.page + 1 < this.cands.length / 5 ? this.candIndex + 5 : this.candIndex
+    this.page
+      = this.page + 1 < this.cands.length / 5
+        ? this.page + 1
         : Math.floor(this.cands.length / 5)
     this.showCandidates()
   }
 
   private clearCandidate() {
-    this.candPage = 0
+    this.page = 0
     this.candIndex = 0
     this.cands = []
-    this.candsMatchLens = []
   }
 
   private commitText(text: string) {
     updateContent(this.newIn, text)
     dispatchInputEvent(this.newIn, 'input')
-    this.originPinyin = ''
-    this.convertedPinyin = ''
+    this.convertedText = ''
     this.setPreEditText('')
   }
 
   private endComposition() {
-    const text = this.getPreEditText()
+    const text = segments2PreeditText()
     this.commitText(text)
     this.hideComposition()
     this.clearCandidate()
     this.cursorPosition = 0
-    this.originPinyin = ''
-    this.unconvertedPinyinStartPosition = 0
+    this.unconvertedTextStartPosition = 0   
     dispatchCompositionEvent(this.newIn, 'compositionend', text)
     clearTimeout(this.adjustCompositionElTimeoutId)
   }
 
-  private fetchCandidateAsync() {
+  private fetchCandidate(text = '') {
     this.clearCandidate()
-    const text = this.getPreEditText()
-    const { pinyin, origin } = findConvertPinyinByCursorPosition(text, this.unconvertedPinyinStartPosition, this.cursorPosition)
-    const [candidates, matchLens] = getCandidates(pinyin)
+    text = text ? text : getUnconvertedText()
+    const { candidates, segments } = requestCandidates(text)
+    this.history = [
+      ...getConvertedHistory(this.history),
+      ...segments.map(s => ({ text: s }))
+    ]
+    console.log(text, candidates, segments, '===segments===')
     this.setCandidates(candidates)
-    if (origin.length > pinyin.length) {
-      matchLens.forEach((_, i) => {
-        matchLens[i] = origin.length
-      })
-    }
-    this.setMatchLens(matchLens, Array.from<string>({ length: candidates.length }).fill(origin))
     this.showCandidates()
   }
 
   private getNthCandidate(n: number) {
-    return this.cands[5 * this.candPage + n - 1]
+    return this.cands[5 * this.page + n - 1]
   }
 
-  private getNthMatchLen(n: number) {
-    return this.candsMatchLens[5 * this.candPage + n - 1]
-  }
-
-  private getNthMatchOriginPinyin(n: number) {
-    return this.candsMatchOriginPinyins[5 * this.candPage + n - 1]
-  }
-
-  private getPreEditText() {
-    const el = document.getElementById('sime-preedit')
-    return el?.innerText || ''
-  }
-
-  private hideComposition() {
-    this.typeOn = false
-    const el = document.getElementById('sime-composition')
-    if (el) {
-      el.style.display = 'none'
-    }
-  }
-
-  private hideStatus() {
-    this.statusHandle?.hide()
-  }
-
-  private highBack() {
+  private highlightCandidate() {
     const simeCndEls = document.querySelectorAll('.sime-cnd')
     simeCndEls.forEach((el, i) => {
       el.classList.remove('highlight')
@@ -413,48 +385,42 @@ export class Ime {
     })
     const prevCandBtn = document.querySelector('.sime-prev-cand-button')
     const nextCandBtn = document.querySelector('.sime-next-cand-button')
-    this.candPage === 0
+    this.page === 0
       ? prevCandBtn?.classList.add('disabled')
       : prevCandBtn?.classList.remove('disabled')
 
-    5 * (this.candPage + 1) >= this.cands.length
+    5 * (this.page + 1) >= this.cands.length
       ? nextCandBtn?.classList.add('disabled')
       : nextCandBtn?.classList.remove('disabled')
   }
 
   private nthCandidateExists(n: number) {
-    return 5 * this.candPage + n - 1 < this.cands.length
+    return 5 * this.page + n - 1 < this.cands.length
   }
 
   private selectCandidate(selection: number) {
+    // return
     if (!this.nthCandidateExists(selection)) {
       return
     }
     const cand = this.getNthCandidate(selection)
-    const text = this.getPreEditText()
-    const matchedLength = this.getNthMatchLen(selection)
-    const matchedOriginPinyin = this.getNthMatchOriginPinyin(selection)
-    this.convertedPinyin += matchedOriginPinyin
-    let newText = ''
-    newText = text.substring(0, this.unconvertedPinyinStartPosition)
-    newText += cand
-    newText += text.substring(this.unconvertedPinyinStartPosition + matchedLength)
-    this.unconvertedPinyinStartPosition += cand.length
-    if (this.unconvertedPinyinStartPosition >= newText.length) {
-      this.setPreEditText(newText)
+    replaceHistory(this.history, cand)
+    const matchedOriginPinyin = cand.text
+    this.convertedText += matchedOriginPinyin
+    if (this.history[this.history.length - 1].w) {
       this.endComposition()
     }
     else {
       let { html, cursorPosition } = replaceTextAndUpdateCursorPosition(
         text,
-        this.unconvertedPinyinStartPosition - cand.length,
-        this.getNthMatchLen(selection),
-        cand,
+        this.unconvertedTextStartPosition - cand.matchLength,
+        cand.matchLength,
+        cand.text,
         this.cursorPosition,
       )
       this.setPreEditText(html)
       newText = this.getPreEditText()
-      if (!hasLatin(cand)) {
+      if (!hasLatin(cand.text)) {
         this.cursorPosition = cursorPosition
       }
       else {
@@ -465,41 +431,40 @@ export class Ime {
         }
       }
       this.updateCompositionPosition()
-      this.fetchCandidateAsync()
+      this.fetchCandidate()
       dispatchCompositionEvent(this.newIn, 'compositionupdate', newText)
     }
   }
 
-  private setCandidates(candidates: string[]) {
+  private setCandidates(candidates: Candidate[]) {
     this.cands = candidates
   }
 
-  private setMatchLens(matchLens: number[], matchOriginPinyins: string[]) {
-    this.candsMatchLens = matchLens
-    this.candsMatchOriginPinyins = matchOriginPinyins
+  private getPreEditText() { 
+    return this.preeditEle?.innerText || ''
   }
 
   private setPreEditText(html: string) {
-    const el = document.getElementById('sime-preedit')
-    if (el) {
-      el.innerHTML = html
+    if (this.preeditEle) {
+      this.preeditEle.innerHTML = html
+      return
     }
   }
 
   private showCandidates() {
     const nodes = document.querySelectorAll('.sime-cnd')
     const len = nodes.length
-    const m = (this.candPage + 1) * len - this.cands.length > 0 ? this.cands.length % len : len
+    const m = (this.page + 1) * len - this.cands.length > 0 ? this.cands.length % len : len
     for (let i = 0; i < m; i++) {
       let str = ''
       str += `${i + 1}. `
-      str += this.cands[i + this.candPage * 5]
+      str += this.cands[i + this.page * 5].w
       nodes[i].innerHTML = str
     }
     for (let i = m; i < len; i++) {
       nodes[i].innerHTML = ''
     }
-    this.highBack()
+    this.highlightCandidate()
   }
 
   private showComposition() {
@@ -510,8 +475,20 @@ export class Ime {
     }
   }
 
+  private hideComposition() {
+    this.typeOn = false
+    const el = document.getElementById('sime-composition')
+    if (el) {
+      el.style.display = 'none'
+    }
+  }
+
   private showStatus() {
     this.statusHandle?.show()
+  }
+
+  private hideStatus() {
+    this.statusHandle?.hide()
   }
 
   private switchMethod = () => {
@@ -539,13 +516,12 @@ export class Ime {
     }
     const text = this.getPreEditText()
     const oldCursorPosition = this.cursorPosition
-    this.cursorPosition = moveCursorPositionLeft(this.unconvertedPinyinStartPosition, oldCursorPosition)
+    this.cursorPosition = moveCursorPositionLeft(this.unconvertedTextStartPosition, oldCursorPosition)
     if (this.cursorPosition === oldCursorPosition) {
       return
     }
     const html = generateTextByCursorPosition(text, this.cursorPosition)
     this.setPreEditText(html)
-    this.fetchCandidateAsync()
     this.updateCompositionPosition()
   }
 
@@ -558,7 +534,6 @@ export class Ime {
     }
     const html = generateTextByCursorPosition(text, this.cursorPosition)
     this.setPreEditText(html)
-    this.fetchCandidateAsync()
     this.updateCompositionPosition()
   }
 
@@ -617,6 +592,7 @@ export class Ime {
         this.candidatePageDown()
       },
     )
+    this.preeditEle = document.getElementById('sime-preedit')
     this.injectCSS()
     this.bindEvents()
   }
@@ -635,8 +611,8 @@ export class Ime {
   turnOff() {
     this.isOn = false
     this.setPreEditText('')
-    this.convertedPinyin = ''
-    this.unconvertedPinyinStartPosition = 0
+    this.convertedText = ''
+    this.unconvertedTextStartPosition = 0
     this.cursorPosition = 0
     this.hideComposition()
     this.clearCandidate()
