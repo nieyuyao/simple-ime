@@ -4,6 +4,8 @@ import dictTxt from '../data/dict.txt?raw'
 import packedTrieTxt from '../data/packed-trie.txt?raw'
 import { cut } from './pinyin'
 
+const BEST_CANDIDATE_COUNT_LIMIT = 10
+
 enum Category {
   Backward = 0b0001,
   Forward = 0b0010,
@@ -92,7 +94,7 @@ export function backwardLookupCandidates(segments: string[], end: number): Candi
         }
       }))
       j = i + 1
-      i = segments.length
+      i = end + 1
     }
     else if (words.length) {
       collect = joinCandidates(collect, words.map((w) => {
@@ -102,7 +104,10 @@ export function backwardLookupCandidates(segments: string[], end: number): Candi
         }
       }))
       j = i + 1
-      i = segments.length
+      i = end + 1
+    }
+    if (collect.length > BEST_CANDIDATE_COUNT_LIMIT) {
+      collect.splice(BEST_CANDIDATE_COUNT_LIMIT, collect.length - BEST_CANDIDATE_COUNT_LIMIT)
     }
   }
 
@@ -144,7 +149,7 @@ export function forwardLookupCandidates(segments: string[], end: number): Candid
         ])
       }
     }
-    else if (i === segments.length - 1) {
+    else if (i === end) {
       collect = joinCandidates(collect, words.map((w) => {
         return {
           ...w,
@@ -152,6 +157,9 @@ export function forwardLookupCandidates(segments: string[], end: number): Candid
           matchLength: text.length,
         }
       }))
+    }
+    if (collect.length > BEST_CANDIDATE_COUNT_LIMIT) {
+      collect.splice(BEST_CANDIDATE_COUNT_LIMIT, collect.length - BEST_CANDIDATE_COUNT_LIMIT)
     }
   }
   return collect
@@ -167,21 +175,22 @@ export function requestCandidates(
   const segmentsList = cut(text)
   segmentsList.sort((a, b) => a.length - b.length)
   const segments = segmentsList[0]
-  let result: Candidate[] = []
   const already = new Set<string>()
+  let bestResult: Candidate[] = []
+  let dividedResult: Candidate[] = []
   if (category & Category.Backward) {
     // Best Candidates
-    result.push(...backwardLookupCandidates(segments, segments.length - 1))
-    // Segment Candidates
-    // result.push(...backwardLookupCandidates(segments, 0))
+    bestResult.push(...backwardLookupCandidates(segments, segments.length - 1))
+    // Divided Candidates
+    dividedResult.push(...backwardLookupCandidates(segments, 0))
   }
   if (category & Category.Forward) {
     // Best Candidates
-    result.push(...forwardLookupCandidates(segments, segments.length - 1))
+    bestResult.push(...forwardLookupCandidates(segments, segments.length - 1))
     // Segment Candidates
-    result.push(...forwardLookupCandidates(segments, 0))
+    dividedResult.push(...forwardLookupCandidates(segments, 0))
   }
-  result = result.filter((cand) => {
+  bestResult = bestResult.filter((cand) => {
     const key = `${cand.w}${cand.f}`
     if (already.has(key)) {
       return false
@@ -189,11 +198,19 @@ export function requestCandidates(
     already.add(key)
     return true
   })
-
-  already.clear()
-  console.log(result.length)
+  dividedResult = dividedResult.filter((cand) => {
+    const key = `${cand.w}${cand.f}`
+    if (already.has(key)) {
+      return false
+    }
+    already.add(key)
+    return true
+  })
   return {
     segments,
-    candidates: result.sort((a, b) => b.f - a.f),
+    candidates: [
+      ...bestResult.sort((a, b) => b.f - a.f),
+      ...dividedResult.sort((a, b) => b.f - a.f),
+    ],
   }
 }

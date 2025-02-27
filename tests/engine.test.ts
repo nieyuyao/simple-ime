@@ -30,5 +30,6 @@ describe('test engine', () => {
     expect(backwardLookupCandidates(['niiii'], 0)[0].w).toBe('niiii')
     expect(backwardLookupCandidates(['ni', 'ii'], 1)[0].w).toBe('你ii')
     expect(backwardLookupCandidates(['kongjianzhan'], 0)[0].w).toBe('空间站')
+    expect(backwardLookupCandidates(['i', 'i'], 0)[0].w).toBe('i')
   })
 })

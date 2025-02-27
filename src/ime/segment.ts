@@ -35,6 +35,13 @@ export function getPreeditSegmentLength(seg: PreeditSegment) {
   return seg.w ? seg.w.length : seg.pinyins.join('').length
 }
 
+export function getPreeditSegmentsPinyinLength() {
+  return preeditSegments.reduce((acc, seg) => {
+    acc += seg.pinyins.join('').length
+    return acc
+  }, 0)
+}
+
 export function getPreeditSegmentsLength() {
   return preeditSegments.reduce((acc, seg) => {
     acc += getPreeditSegmentLength(seg)

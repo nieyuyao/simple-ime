@@ -74,6 +74,15 @@ describe('segment', () => {
     ])
   })
 
+  it('insert single quote', () => {
+    insertLetter('i')
+    insertLetter('\'')
+    insertLetter('\'')
+    insertLetter('n')
+    insertLetter('i')
+    expect(getPreeditSegments()).toEqual([{ w: '', pinyins: ['i\'\'ni'] }])
+  })
+
   it('deleteLetter', () => {
     insertLetter('n')
     expect(getPreeditSegments()).toEqual([{ w: '', pinyins: ['n'] }])

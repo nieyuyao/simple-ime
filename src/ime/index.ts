@@ -12,6 +12,7 @@ import {
   createPreeditSegment,
   deleteLetter,
   getPreeditSegments,
+  getPreeditSegmentsPinyinLength,
   getUnconvertedPreeditSegmentText,
   hasConvertedPreeditSegment,
   insertLetter,
@@ -189,6 +190,9 @@ export class Ime {
       if (e.key === '\'' && !this.typeOn) {
         return
       }
+      if (getPreeditSegmentsPinyinLength() >= 32) {
+        return
+      }
       insertLetter(e.key)
       const html = compositePreedit()
       this.setPreEditText(html)
@@ -278,9 +282,9 @@ export class Ime {
     }
     else {
       this.setPreEditText('')
-      // this.hideComposition()
+      this.hideComposition()
       this.clearCandidate()
-      // clearPreeditSegments()
+      clearPreeditSegments()
     }
   }
 
@@ -348,7 +352,7 @@ export class Ime {
     updatePreeditSegments(segments.map(seg => createPreeditSegment(seg)))
     this.setCandidates(candidates)
     this.showCandidates()
-    console.log(text, segments, getPreeditSegments())
+    console.log(text, candidates, segments, getPreeditSegments())
     this.setPreEditText(compositePreedit())
   }
 

@@ -1,13 +1,5 @@
 import { expect, it } from 'vitest'
-import { appendAns, cut } from '../src/engine/pinyin'
-
-it('append answer to list', () => {
-  expect(appendAns([], [['kong', 'jian']])).toEqual([['kong', 'jian']])
-  expect(appendAns([['kong']], [['jian'], ['ji', 'an']])).toEqual([
-    ['kong', 'jian'],
-    ['kong', 'ji', 'an'],
-  ])
-})
+import { cut } from '../src/engine/pinyin'
 
 it('split text according to pinyin dict', () => {
   expect(cut('nihao')).toEqual([
@@ -47,4 +39,5 @@ it('split text has quotes', () => {
   expect(cut('\'nii')).toEqual([['\'ni', 'i']])
   expect(cut('\'\'ni\'\'i')).toEqual([['\'\'ni', '\'\'i']])
   expect(cut('\'\'ni\'\'i\'\'')).toEqual([['\'\'ni', '\'\'i\'\'']])
+  expect(cut('i\'\'ni')).toEqual([['i', '\'\'ni']])
 })

@@ -29,6 +29,9 @@ export function splitText(text: string): string[][] {
     while (res) {
       const index = res.index
       const compAns = splitText(res[0])
+      if (compAns.length <= 0) {
+        return []
+      }
       if (lastIndex !== index) {
         const quotes = text.substring(lastIndex, index)
         compAns.forEach((comp) => {
