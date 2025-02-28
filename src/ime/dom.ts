@@ -54,12 +54,7 @@ export function updateContent(element: Element, str: string) {
     case 'DIV':
       insertContentIntoEditable(str)
       break
-    case 'IFRAME':
-      try {
-        // TODO:
-      }
-      catch {
-        return false
-      }
+    default:
+      return false
   }
 }

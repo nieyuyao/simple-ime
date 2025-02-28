@@ -1,37 +1,39 @@
-import { version } from '../package.json'
-import { getCandidates } from './engine'
-import { handleBackspace } from './handlers/backspace'
-import { handleSpecial } from './handlers/special'
-import ImeCss from './styles/index.scss?inline'
-import { isEditableElement, updateContent } from './utils/dom'
-import { dispatchCompositionEvent, dispatchInputEvent } from './utils/event'
-import { hasLatin } from './utils/pinyin'
+import type { Candidate } from '../types'
+import { version } from '../../package.json'
+import { requestCandidates } from '../engine'
+import ImeCss from '../styles/index.scss?inline'
+import { createComposition } from '../views/create-composition'
+import { createStatusBar } from '../views/create-statusbar'
+import { isEditableElement, updateContent } from './dom'
+import { dispatchCompositionEvent, dispatchInputEvent } from './event'
 import {
-  findConvertPinyinByCursorPosition,
-  generateTextByCursorPosition,
-  insertLetterAtCursorPosition,
+  clearPreeditSegments,
+  compositePreedit,
+  createPreeditSegment,
+  deleteLetter,
+  getPreeditSegments,
+  getPreeditSegmentsPinyinLength,
+  getUnconvertedPreeditSegmentText,
+  hasConvertedPreeditSegment,
+  insertLetter,
   moveCursorPositionEnd,
   moveCursorPositionLeft,
   moveCursorPositionRight,
-  replaceTextAndUpdateCursorPosition,
-} from './utils/predict'
-import { createInputView } from './views/create-input-view'
-import { createStatusBar } from './views/create-statusbar'
+  preeditSegments2Text,
+  recoverySegments,
+  replaceSegments,
+  updatePreeditSegments,
+} from './preedit'
+import { handleSpecial } from './special'
 
-export class SimpleIme {
+export class Ime {
   version = version
 
-  private candPage = 0
+  private page = 0
 
   private candIndex = 0
 
-  private cands: string[] = []
-
-  private candsMatchLens: number[] = []
-
-  private candsMatchOriginPinyins: string[] = []
-
-  private convertedPinyin = ''
+  private cands: Candidate[] = []
 
   private chiMode = false
 
@@ -57,14 +59,9 @@ export class SimpleIme {
 
   private typeOn = false
 
-  private originPinyin = ''
-
   private statusHandle?: ReturnType<typeof createStatusBar>
 
-  private inputViewHandle?: ReturnType<typeof createInputView>
-
-  // Cursor position at composition
-  private cursorPosition = 0
+  private compositionHandle?: ReturnType<typeof createComposition>
 
   private injectedStyleEl?: HTMLStyleElement
 
@@ -74,7 +71,7 @@ export class SimpleIme {
 
   private pressedKeys: string[] = []
 
-  private unconvertedPinyinStartPosition = 0
+  private preeditEle: HTMLElement | null
 
   private injectCSS() {
     const style = document.createElement('style')
@@ -110,49 +107,42 @@ export class SimpleIme {
   }
 
   private handleKeyDownEvent = (e: KeyboardEvent) => {
-    const { isOn, newIn, originPinyin } = this
+    const { isOn, newIn } = this
     if (this.pressedKeys.length <= 2) {
       this.pressedKeys.push(e.key)
     }
-    if (!isOn || !newIn) {
-      return
-    }
-    if (!this.chiMode || !this.typeOn) {
+    if (
+      !isOn
+      || !newIn
+      || !this.chiMode
+      || !this.typeOn
+    ) {
       return
     }
     if (e.key === 'Backspace') {
       e.preventDefault()
-      const text = this.getPredictText()
-      const { html, newCursorPosition } = handleBackspace(text, originPinyin, this.cursorPosition)
-      this.setPredictText(html)
-      const newText = this.getPredictText()
-      this.cursorPosition = newCursorPosition
-      if (!newText) {
-        this.hideComposition()
-        this.clearCandidate()
-        this.originPinyin = ''
-        this.cursorPosition = 0
-        this.convertedPinyin = ''
-        this.unconvertedPinyinStartPosition = 0
-      }
-      else if (this.unconvertedPinyinStartPosition >= 0) {
-        this.unconvertedPinyinStartPosition = 0
-        this.fetchCandidateAsync()
-        this.convertedPinyin = ''
-        this.originPinyin = newText
-        dispatchCompositionEvent(this.newIn, 'compositionupdate', newText)
+      if (hasConvertedPreeditSegment()) {
+        recoverySegments()
+        moveCursorPositionEnd()
+        this.setPreEditText(compositePreedit())
+        this.fetchCandidate()
+        dispatchCompositionEvent(this.newIn, 'compositionupdate', preeditSegments2Text())
       }
       else {
-        this.originPinyin = newText
-        this.fetchCandidateAsync()
-        dispatchCompositionEvent(this.newIn, 'compositionupdate', newText)
+        deleteLetter()
+        if (preeditSegments2Text().length <= 0) {
+          this.endComposition()
+          return
+        }
+        this.setPreEditText(compositePreedit())
+        this.fetchCandidate()
+        dispatchCompositionEvent(this.newIn, 'compositionupdate', preeditSegments2Text())
       }
       this.updateCompositionPosition()
     }
     else if (e.code === 'Escape') {
       e.preventDefault()
-      this.setPredictText('')
-      this.cursorPosition = 0
+      this.setPreEditText('')
       this.hideComposition()
       this.clearCandidate()
     }
@@ -200,32 +190,19 @@ export class SimpleIme {
       if (e.key === '\'' && !this.typeOn) {
         return
       }
-      const text = this.getPredictText()
-      const html = insertLetterAtCursorPosition(text, e.key, this.cursorPosition)
-      this.setPredictText(html)
-      this.cursorPosition++
-      const newText = this.getPredictText()
-      const unConverted = newText.substring(this.unconvertedPinyinStartPosition)
-      //
-      // const toSegmented = unConverted.substring(this.unconvertedPinyinStartPosition, this.cursorPosition)
-      // if (toSegmented) {
-      //   const segmented = segmentPinyinByTire(toSegmented)
-      //   const { cursorPosition: newCursorPosition, html } = replaceTextAndUpdateCursorPosition(newText, this.unconvertedPinyinStartPosition, this.cursorPosition - this.unconvertedPinyinStartPosition, segmented, this.cursorPosition)
-      //   this.setPredictText(html)
-      //   this.cursorPosition = newCursorPosition
-      //   this.originPinyin = this.convertedPinyin + segmented + newText.substring(this.cursorPosition)
-      // }
-      // else {
-      //   this.originPinyin = this.convertedPinyin + unConverted
-      // }
-      this.originPinyin = this.convertedPinyin + unConverted
-      this.fetchCandidateAsync()
+      if (getPreeditSegmentsPinyinLength() >= 16) {
+        return
+      }
+      insertLetter(e.key)
+      const html = compositePreedit()
+      this.setPreEditText(html)
+      this.fetchCandidate()
       if (this.typeOn) {
-        dispatchCompositionEvent(this.newIn, 'compositionupdate', newText)
+        dispatchCompositionEvent(this.newIn, 'compositionupdate', preeditSegments2Text())
       }
       else {
         this.showComposition()
-        dispatchCompositionEvent(this.newIn, 'compositionstart', newText)
+        dispatchCompositionEvent(this.newIn, 'compositionstart', preeditSegments2Text())
       }
       this.updateCompositionPosition()
     }
@@ -265,11 +242,11 @@ export class SimpleIme {
     }
     else if (e.key === '[') {
       e.preventDefault()
-      this.moveCursorPositionLeft()
+      this.moveCursorLeft()
     }
     else if (e.key === ']') {
       e.preventDefault()
-      this.moveCursorPositionRight()
+      this.moveCursorRight()
     }
     else if (this.typeOn) {
       e.preventDefault()
@@ -292,9 +269,10 @@ export class SimpleIme {
       this.flag = false
       this.newIn = activeElement
       this.updateCompositionPosition()
-      this.setPredictText('')
+      this.setPreEditText('')
       this.hideComposition()
       this.clearCandidate()
+      clearPreeditSegments()
     }
   }
 
@@ -303,16 +281,17 @@ export class SimpleIme {
       this.flag = false
     }
     else {
-      this.setPredictText('')
+      this.setPreEditText('')
       this.hideComposition()
       this.clearCandidate()
+      clearPreeditSegments()
     }
   }
 
   private candidatePrev() {
     this.candIndex = this.candIndex - 1 >= 0 ? this.candIndex - 1 : 0
     if (this.candIndex % 5 === 4) {
-      this.candPage = this.candPage - 1 >= 0 ? this.candPage - 1 : 0
+      this.page = this.page - 1 >= 0 ? this.page - 1 : 0
     }
     this.showCandidates()
   }
@@ -321,101 +300,67 @@ export class SimpleIme {
     this.candIndex
       = this.candIndex + 1 <= this.cands.length - 1 ? this.candIndex + 1 : this.cands.length - 1
     if (this.candIndex % 5 === 0) {
-      this.candPage
-        = this.candPage + 1 < this.cands.length / 5
-          ? this.candPage + 1
+      this.page
+        = this.page + 1 < this.cands.length / 5
+          ? this.page + 1
           : Math.floor(this.cands.length / 5)
     }
     this.showCandidates()
   }
 
   private candidatePageUp() {
-    this.candIndex = this.candPage - 1 >= 0 ? this.candIndex - 5 : this.candIndex
-    this.candPage = this.candPage - 1 >= 0 ? this.candPage - 1 : 0
+    this.candIndex = this.page - 1 >= 0 ? this.candIndex - 5 : this.candIndex
+    this.page = this.page - 1 >= 0 ? this.page - 1 : 0
     this.showCandidates()
   }
 
   private candidatePageDown() {
-    this.candIndex = this.candPage + 1 < this.cands.length / 5 ? this.candIndex + 5 : this.candIndex
-    this.candPage
-      = this.candPage + 1 < this.cands.length / 5
-        ? this.candPage + 1
-        : Math.floor(this.cands.length / 5)
+    this.candIndex = this.page + 1 < this.cands.length / 5 ? this.candIndex + 5 : this.candIndex
+    this.page
+      = this.page + 1 < this.cands.length / 5
+        ? this.page + 1
+        : this.page
     this.showCandidates()
   }
 
   private clearCandidate() {
-    this.candPage = 0
+    this.page = 0
     this.candIndex = 0
     this.cands = []
-    this.candsMatchLens = []
   }
 
   private commitText(text: string) {
     updateContent(this.newIn, text)
     dispatchInputEvent(this.newIn, 'input')
-    this.originPinyin = ''
-    this.convertedPinyin = ''
-    this.setPredictText('')
+    this.setPreEditText('')
   }
 
   private endComposition() {
-    const text = this.getPredictText()
+    const text = preeditSegments2Text()
     this.commitText(text)
     this.hideComposition()
     this.clearCandidate()
-    this.cursorPosition = 0
-    this.originPinyin = ''
-    this.unconvertedPinyinStartPosition = 0
+    clearPreeditSegments()
     dispatchCompositionEvent(this.newIn, 'compositionend', text)
     clearTimeout(this.adjustCompositionElTimeoutId)
   }
 
-  private fetchCandidateAsync() {
+  private fetchCandidate() {
     this.clearCandidate()
-    const text = this.getPredictText()
-    const { pinyin, origin } = findConvertPinyinByCursorPosition(text, this.unconvertedPinyinStartPosition, this.cursorPosition)
-    const [candidates, matchLens] = getCandidates(pinyin)
+    const text = getUnconvertedPreeditSegmentText()
+    const { candidates, segments } = requestCandidates(text)
+    updatePreeditSegments(segments.map(seg => createPreeditSegment(seg)))
     this.setCandidates(candidates)
-    if (origin.length > pinyin.length) {
-      matchLens.forEach((_, i) => {
-        matchLens[i] = origin.length
-      })
-    }
-    this.setMatchLens(matchLens, Array.from<string>({ length: candidates.length }).fill(origin))
     this.showCandidates()
+    console.log(getPreeditSegments(), compositePreedit())
+    this.setPreEditText(compositePreedit())
   }
 
   private getNthCandidate(n: number) {
-    return this.cands[5 * this.candPage + n - 1]
+    return this.cands[5 * this.page + n - 1]
   }
 
-  private getNthMatchLen(n: number) {
-    return this.candsMatchLens[5 * this.candPage + n - 1]
-  }
-
-  private getNthMatchOriginPinyin(n: number) {
-    return this.candsMatchOriginPinyins[5 * this.candPage + n - 1]
-  }
-
-  private getPredictText() {
-    const el = document.getElementById('sime-predict')
-    return el?.innerText || ''
-  }
-
-  private hideComposition() {
-    this.typeOn = false
-    const el = document.getElementById('sime-composition')
-    if (el) {
-      el.style.display = 'none'
-    }
-  }
-
-  private hideStatus() {
-    this.statusHandle?.hide()
-  }
-
-  private highBack() {
+  private highlightCandidate() {
     const simeCndEls = document.querySelectorAll('.sime-cnd')
     simeCndEls.forEach((el, i) => {
       el.classList.remove('highlight')
@@ -425,17 +370,17 @@ export class SimpleIme {
     })
     const prevCandBtn = document.querySelector('.sime-prev-cand-button')
     const nextCandBtn = document.querySelector('.sime-next-cand-button')
-    this.candPage === 0
+    this.page === 0
       ? prevCandBtn?.classList.add('disabled')
       : prevCandBtn?.classList.remove('disabled')
 
-    5 * (this.candPage + 1) >= this.cands.length
+    5 * (this.page + 1) >= this.cands.length
       ? nextCandBtn?.classList.add('disabled')
       : nextCandBtn?.classList.remove('disabled')
   }
 
   private nthCandidateExists(n: number) {
-    return 5 * this.candPage + n - 1 < this.cands.length
+    return 5 * this.page + n - 1 < this.cands.length
   }
 
   private selectCandidate(selection: number) {
@@ -443,75 +388,42 @@ export class SimpleIme {
       return
     }
     const cand = this.getNthCandidate(selection)
-    const text = this.getPredictText()
-    const matchedLength = this.getNthMatchLen(selection)
-    const matchedOriginPinyin = this.getNthMatchOriginPinyin(selection)
-    this.convertedPinyin += matchedOriginPinyin
-    let newText = ''
-    newText = text.substring(0, this.unconvertedPinyinStartPosition)
-    newText += cand
-    newText += text.substring(this.unconvertedPinyinStartPosition + matchedLength)
-    this.unconvertedPinyinStartPosition += cand.length
-    if (this.unconvertedPinyinStartPosition >= newText.length) {
-      this.setPredictText(newText)
+    replaceSegments(cand)
+    if (getUnconvertedPreeditSegmentText().length <= 0) {
       this.endComposition()
     }
     else {
-      let { html, cursorPosition } = replaceTextAndUpdateCursorPosition(
-        text,
-        this.unconvertedPinyinStartPosition - cand.length,
-        this.getNthMatchLen(selection),
-        cand,
-        this.cursorPosition,
-      )
-      this.setPredictText(html)
-      newText = this.getPredictText()
-      if (!hasLatin(cand)) {
-        this.cursorPosition = cursorPosition
-      }
-      else {
-        this.cursorPosition = moveCursorPositionEnd(newText)
-        if (this.cursorPosition !== cursorPosition) {
-          html = generateTextByCursorPosition(text, this.cursorPosition)
-          this.setPredictText(html)
-        }
-      }
-      this.updateCompositionPosition()
-      this.fetchCandidateAsync()
-      dispatchCompositionEvent(this.newIn, 'compositionupdate', newText)
+      const html = compositePreedit()
+      this.setPreEditText(html)
+      this.fetchCandidate()
+      dispatchCompositionEvent(this.newIn, 'compositionupdate', preeditSegments2Text())
     }
   }
 
-  private setCandidates(candidates: string[]) {
+  private setCandidates(candidates: Candidate[]) {
     this.cands = candidates
   }
 
-  private setMatchLens(matchLens: number[], matchOriginPinyins: string[]) {
-    this.candsMatchLens = matchLens
-    this.candsMatchOriginPinyins = matchOriginPinyins
-  }
-
-  private setPredictText(html: string) {
-    const el = document.getElementById('sime-predict')
-    if (el) {
-      el.innerHTML = html
+  private setPreEditText(html: string) {
+    if (this.preeditEle) {
+      this.preeditEle.innerHTML = html
     }
   }
 
   private showCandidates() {
     const nodes = document.querySelectorAll('.sime-cnd')
     const len = nodes.length
-    const m = (this.candPage + 1) * len - this.cands.length > 0 ? this.cands.length % len : len
+    const m = (this.page + 1) * len - this.cands.length > 0 ? this.cands.length % len : len
     for (let i = 0; i < m; i++) {
       let str = ''
       str += `${i + 1}. `
-      str += this.cands[i + this.candPage * 5]
+      str += this.cands[i + this.page * 5].w
       nodes[i].innerHTML = str
     }
     for (let i = m; i < len; i++) {
       nodes[i].innerHTML = ''
     }
-    this.highBack()
+    this.highlightCandidate()
   }
 
   private showComposition() {
@@ -522,18 +434,29 @@ export class SimpleIme {
     }
   }
 
+  private hideComposition() {
+    this.typeOn = false
+    const el = document.getElementById('sime-composition')
+    if (el) {
+      el.style.display = 'none'
+    }
+  }
+
   private showStatus() {
     this.statusHandle?.show()
+  }
+
+  private hideStatus() {
+    this.statusHandle?.hide()
   }
 
   private switchMethod = () => {
     this.method = (this.method + 1) % 2
     this.chiMode = this.method === 1
     if (!this.chiMode) {
-      this.setPredictText('')
+      this.setPreEditText('')
       this.hideComposition()
       this.clearCandidate()
-      this.cursorPosition = 0
     }
   }
 
@@ -545,32 +468,17 @@ export class SimpleIme {
     this.punct = (this.punct + 1) % 2
   }
 
-  private moveCursorPositionLeft() {
-    if (this.cursorPosition - 1 < 0) {
-      return
-    }
-    const text = this.getPredictText()
-    const oldCursorPosition = this.cursorPosition
-    this.cursorPosition = moveCursorPositionLeft(this.unconvertedPinyinStartPosition, oldCursorPosition)
-    if (this.cursorPosition === oldCursorPosition) {
-      return
-    }
-    const html = generateTextByCursorPosition(text, this.cursorPosition)
-    this.setPredictText(html)
-    this.fetchCandidateAsync()
+  private moveCursorLeft() {
+    moveCursorPositionLeft()
+    const html = compositePreedit()
+    this.setPreEditText(html)
     this.updateCompositionPosition()
   }
 
-  private moveCursorPositionRight() {
-    const text = this.getPredictText()
-    const oldCursorPosition = this.cursorPosition
-    this.cursorPosition = moveCursorPositionRight(text, oldCursorPosition)
-    if (this.cursorPosition === oldCursorPosition) {
-      return
-    }
-    const html = generateTextByCursorPosition(text, this.cursorPosition)
-    this.setPredictText(html)
-    this.fetchCandidateAsync()
+  private moveCursorRight() {
+    moveCursorPositionRight()
+    const html = compositePreedit()
+    this.setPreEditText(html)
     this.updateCompositionPosition()
   }
 
@@ -614,7 +522,7 @@ export class SimpleIme {
     if (!this.isOn) {
       this.statusHandle.hide()
     }
-    this.inputViewHandle = createInputView(
+    this.compositionHandle = createComposition(
       (e, index) => {
         e.preventDefault()
         this.selectCandidate(index + 1)
@@ -629,6 +537,7 @@ export class SimpleIme {
         this.candidatePageDown()
       },
     )
+    this.preeditEle = document.getElementById('sime-preedit')
     this.injectCSS()
     this.bindEvents()
   }
@@ -646,10 +555,7 @@ export class SimpleIme {
 
   turnOff() {
     this.isOn = false
-    this.setPredictText('')
-    this.convertedPinyin = ''
-    this.unconvertedPinyinStartPosition = 0
-    this.cursorPosition = 0
+    this.setPreEditText('')
     this.hideComposition()
     this.clearCandidate()
     this.hideStatus()
@@ -658,8 +564,9 @@ export class SimpleIme {
 
   dispose() {
     this.statusHandle?.dispose()
-    this.inputViewHandle?.dispose()
+    this.compositionHandle?.dispose()
     this.injectedStyleEl?.remove()
+    clearTimeout(this.adjustCompositionElTimeoutId)
     this.unbindEvents()
     clearTimeout(this.adjustCompositionElTimeoutId)
   }

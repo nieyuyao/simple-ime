@@ -1,6 +1,6 @@
-import inputViewHtml from './inputView.html?raw'
+import compositionHtml from './composition.html?raw'
 
-export function createInputView(
+export function createComposition(
   onSelectCand: (e: Event, index: number) => void,
   onClickPrevButton: (e: Event) => void,
   onClickNextButton: (e: Event) => void,
@@ -10,7 +10,7 @@ export function createInputView(
   tableEl.setAttribute('cellspacing', '0')
   tableEl.setAttribute('border', '0')
   tableEl.setAttribute('cellpadding', '0')
-  const containerHtml = inputViewHtml
+  const containerHtml = compositionHtml
   tableEl.innerHTML = containerHtml
 
   const canEls = tableEl.querySelectorAll('.sime-cnd')
