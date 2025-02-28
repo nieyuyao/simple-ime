@@ -69,16 +69,23 @@ export function replaceSegments(cand: Candidate) {
   let j = -1
   let i = 0
   let length = 0
+  let startPos = 0
+  let endPos = 0
   for (; i < preeditSegments.length; i++) {
     const seg = preeditSegments[i]
+    const segLength = getPreeditSegmentLength(seg)
+    endPos += segLength
     if (!seg.w) {
       if (j === -1) {
         j = i
       }
-      length += getPreeditSegmentLength(seg)
+      length += segLength
       if (targetMatchLength === length) {
         break
       }
+    }
+    else {
+      startPos += segLength
     }
   }
   if (j === -1) {
@@ -91,6 +98,15 @@ export function replaceSegments(cand: Candidate) {
       return acc
     }, [] as string[])
   preeditSegments.splice(j, i - j + 1, { w: cand.w, pinyins })
+
+  console.log(endPos, cursorPosition, startPos)
+
+  if (cursorPosition >= startPos && cursorPosition <= endPos) {
+    moveCursorPositionEnd()
+  }
+  else {
+    cursorPosition -= (targetMatchLength - cand.w.length)
+  }
 }
 
 export function insertLetter(c: string) {
