@@ -11,7 +11,6 @@ import {
   compositePreedit,
   createPreeditSegment,
   deleteLetter,
-  getPreeditSegments,
   getPreeditSegmentsPinyinLength,
   getUnconvertedPreeditSegmentText,
   hasConvertedPreeditSegment,
@@ -73,6 +72,8 @@ export class Ime {
 
   private preeditEle: HTMLElement | null
 
+  private compositionEle: HTMLElement | null
+
   private injectCSS() {
     const style = document.createElement('style')
     style.setAttribute('type', 'text/css')
@@ -107,15 +108,15 @@ export class Ime {
   }
 
   private handleKeyDownEvent = (e: KeyboardEvent) => {
-    const { isOn, newIn } = this
     if (this.pressedKeys.length <= 2) {
       this.pressedKeys.push(e.key)
     }
+    const { isOn, newIn, chiMode, typeOn } = this
     if (
       !isOn
       || !newIn
-      || !this.chiMode
-      || !this.typeOn
+      || !chiMode
+      || !typeOn
     ) {
       return
     }
@@ -342,7 +343,7 @@ export class Ime {
     this.clearCandidate()
     clearPreeditSegments()
     dispatchCompositionEvent(this.newIn, 'compositionend', text)
-    clearTimeout(this.adjustCompositionElTimeoutId)
+    window.clearTimeout(this.adjustCompositionElTimeoutId)
   }
 
   private fetchCandidate() {
@@ -352,7 +353,6 @@ export class Ime {
     updatePreeditSegments(segments.map(seg => createPreeditSegment(seg)))
     this.setCandidates(candidates)
     this.showCandidates()
-    console.log(getPreeditSegments(), compositePreedit())
     this.setPreEditText(compositePreedit())
   }
 
@@ -428,17 +428,15 @@ export class Ime {
 
   private showComposition() {
     this.typeOn = true
-    const el = document.getElementById('sime-composition')
-    if (el) {
-      el.style.display = 'block'
+    if (this.compositionEle) {
+      this.compositionEle.style.display = 'block'
     }
   }
 
   private hideComposition() {
     this.typeOn = false
-    const el = document.getElementById('sime-composition')
-    if (el) {
-      el.style.display = 'none'
+    if (this.compositionEle) {
+      this.compositionEle.style.display = 'none'
     }
   }
 
@@ -485,7 +483,7 @@ export class Ime {
   private updateCompositionPosition() {
     window.clearTimeout(this.adjustCompositionElTimeoutId)
     if (this.newIn) {
-      const el = document.getElementById('sime-composition')
+      const el = this.compositionEle
       if (el) {
         const { top, left, height } = this.newIn.getBoundingClientRect()
         const docWidth = document.documentElement.clientWidth
@@ -538,6 +536,7 @@ export class Ime {
       },
     )
     this.preeditEle = document.getElementById('sime-preedit')
+    this.compositionEle = document.getElementById('sime-composition')
     this.injectCSS()
     this.bindEvents()
   }
@@ -559,15 +558,14 @@ export class Ime {
     this.hideComposition()
     this.clearCandidate()
     this.hideStatus()
-    clearTimeout(this.adjustCompositionElTimeoutId)
+    window.clearTimeout(this.adjustCompositionElTimeoutId)
   }
 
   dispose() {
     this.statusHandle?.dispose()
     this.compositionHandle?.dispose()
     this.injectedStyleEl?.remove()
-    clearTimeout(this.adjustCompositionElTimeoutId)
     this.unbindEvents()
-    clearTimeout(this.adjustCompositionElTimeoutId)
+    window.clearTimeout(this.adjustCompositionElTimeoutId)
   }
 }

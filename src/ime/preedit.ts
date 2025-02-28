@@ -98,9 +98,6 @@ export function replaceSegments(cand: Candidate) {
       return acc
     }, [] as string[])
   preeditSegments.splice(j, i - j + 1, { w: cand.w, pinyins })
-
-  console.log(endPos, cursorPosition, startPos)
-
   if (cursorPosition >= startPos && cursorPosition <= endPos) {
     moveCursorPositionEnd()
   }
