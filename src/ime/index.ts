@@ -319,7 +319,7 @@ export class Ime {
     this.page
       = this.page + 1 < this.cands.length / 5
         ? this.page + 1
-        : Math.floor(this.cands.length / 5)
+        : this.page
     this.showCandidates()
   }
 
@@ -348,7 +348,7 @@ export class Ime {
   private fetchCandidate() {
     this.clearCandidate()
     const text = getUnconvertedPreeditSegmentText()
-    const { candidates, segments } = requestCandidates(text, 0b0001)
+    const { candidates, segments } = requestCandidates(text)
     updatePreeditSegments(segments.map(seg => createPreeditSegment(seg)))
     this.setCandidates(candidates)
     this.showCandidates()

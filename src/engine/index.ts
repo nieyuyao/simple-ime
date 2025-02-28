@@ -4,8 +4,6 @@ import dictTxt from '../data/dict.txt?raw'
 import packedTrieTxt from '../data/packed-trie.txt?raw'
 import { cut } from './pinyin'
 
-const BEST_CANDIDATE_COUNT_LIMIT = 10
-
 enum Category {
   Backward = 0b0001,
   Forward = 0b0010,
@@ -72,7 +70,7 @@ function joinCandidates(a: Candidate[], b: Candidate[]): Candidate[] {
   return result
 }
 
-export function backwardLookupCandidates(segments: string[], end: number): Candidate[] {
+export function backwardLookupCandidates(segments: string[], end: number, limit = 10): Candidate[] {
   let collect: Candidate[] = []
   let j = 0
   for (let i = end; i >= j; i--) {
@@ -106,15 +104,15 @@ export function backwardLookupCandidates(segments: string[], end: number): Candi
       j = i + 1
       i = end + 1
     }
-    if (collect.length > BEST_CANDIDATE_COUNT_LIMIT) {
-      collect.splice(BEST_CANDIDATE_COUNT_LIMIT, collect.length - BEST_CANDIDATE_COUNT_LIMIT)
+    if (collect.length > limit && limit !== -1) {
+      collect.splice(limit, collect.length - limit)
     }
   }
 
   return collect
 }
 
-export function forwardLookupCandidates(segments: string[], end: number): Candidate[] {
+export function forwardLookupCandidates(segments: string[], end: number, limit = 10): Candidate[] {
   let j = 0
   let collect: Candidate[] = []
   for (let i = 0; i <= end; i++) {
@@ -158,8 +156,8 @@ export function forwardLookupCandidates(segments: string[], end: number): Candid
         }
       }))
     }
-    if (collect.length > BEST_CANDIDATE_COUNT_LIMIT) {
-      collect.splice(BEST_CANDIDATE_COUNT_LIMIT, collect.length - BEST_CANDIDATE_COUNT_LIMIT)
+    if (collect.length > limit && limit !== -1) {
+      collect.splice(limit, collect.length - limit)
     }
   }
   return collect
@@ -182,13 +180,13 @@ export function requestCandidates(
     // Best Candidates
     bestResult.push(...backwardLookupCandidates(segments, segments.length - 1))
     // Divided Candidates
-    dividedResult.push(...backwardLookupCandidates(segments, 0))
+    dividedResult.push(...backwardLookupCandidates(segments, 0, -1))
   }
   if (category & Category.Forward) {
     // Best Candidates
     bestResult.push(...forwardLookupCandidates(segments, segments.length - 1))
     // Segment Candidates
-    dividedResult.push(...forwardLookupCandidates(segments, 0))
+    dividedResult.push(...forwardLookupCandidates(segments, 0, -1))
   }
   bestResult = bestResult.filter((cand) => {
     const key = `${cand.w}${cand.f}`

@@ -192,13 +192,14 @@ function joinPreedit(s: string, joined: string) {
 }
 
 export function splitPreeditSegmentsByCursorPosition() {
+  let converted = ''
   let front = ''
   let behind = ''
   let pos = 0
   for (let i = 0; i < preeditSegments.length; i++) {
     const seg = preeditSegments[i]
     if (seg.w) {
-      front += seg.w
+      converted += seg.w
       pos += seg.w.length
     }
     else {
@@ -223,7 +224,7 @@ export function splitPreeditSegmentsByCursorPosition() {
     }
   }
 
-  return { front, behind }
+  return { front: `${converted}${front}`, behind }
 }
 
 export function compositePreedit() {
