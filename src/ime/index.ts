@@ -23,7 +23,7 @@ import {
   recoverySegments,
   replaceSegments,
   updatePreeditSegments,
-} from './segment'
+} from './preedit'
 import { handleSpecial } from './special'
 
 export class Ime {
@@ -190,7 +190,7 @@ export class Ime {
       if (e.key === '\'' && !this.typeOn) {
         return
       }
-      if (getPreeditSegmentsPinyinLength() >= 32) {
+      if (getPreeditSegmentsPinyinLength() >= 16) {
         return
       }
       insertLetter(e.key)
@@ -352,7 +352,7 @@ export class Ime {
     updatePreeditSegments(segments.map(seg => createPreeditSegment(seg)))
     this.setCandidates(candidates)
     this.showCandidates()
-    console.log(text, candidates, segments, getPreeditSegments())
+    console.log(getPreeditSegments(), compositePreedit())
     this.setPreEditText(compositePreedit())
   }
 
@@ -566,6 +566,7 @@ export class Ime {
     this.statusHandle?.dispose()
     this.compositionHandle?.dispose()
     this.injectedStyleEl?.remove()
+    clearTimeout(this.adjustCompositionElTimeoutId)
     this.unbindEvents()
     clearTimeout(this.adjustCompositionElTimeoutId)
   }

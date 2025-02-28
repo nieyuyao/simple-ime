@@ -12,7 +12,7 @@ import {
   replaceSegments,
   setupPreeditSegments,
   splitPreeditSegmentsByCursorPosition,
-} from '../src/ime/segment'
+} from '../src/ime/preedit'
 
 describe('segment', () => {
   beforeEach(() => {

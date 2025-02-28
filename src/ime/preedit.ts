@@ -90,7 +90,7 @@ export function replaceSegments(cand: Candidate) {
       acc.push(...seg.pinyins)
       return acc
     }, [] as string[])
-  preeditSegments.splice(j, i + 1, { w: cand.w, pinyins })
+  preeditSegments.splice(j, i - j + 1, { w: cand.w, pinyins })
 }
 
 export function insertLetter(c: string) {

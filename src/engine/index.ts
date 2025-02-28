@@ -70,7 +70,7 @@ function joinCandidates(a: Candidate[], b: Candidate[]): Candidate[] {
   return result
 }
 
-export function backwardLookupCandidates(segments: string[], end: number, limit = 10): Candidate[] {
+export function backwardLookupCandidates(segments: string[], end: number, limit = 2): Candidate[] {
   let collect: Candidate[] = []
   let j = 0
   for (let i = end; i >= j; i--) {
@@ -112,7 +112,7 @@ export function backwardLookupCandidates(segments: string[], end: number, limit 
   return collect
 }
 
-export function forwardLookupCandidates(segments: string[], end: number, limit = 10): Candidate[] {
+export function forwardLookupCandidates(segments: string[], end: number, limit = 2): Candidate[] {
   let j = 0
   let collect: Candidate[] = []
   for (let i = 0; i <= end; i++) {
