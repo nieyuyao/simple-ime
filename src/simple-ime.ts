@@ -368,6 +368,7 @@ export class SimpleIme {
     this.originPinyin = ''
     this.unconvertedPinyinStartPosition = 0
     dispatchCompositionEvent(this.newIn, 'compositionend', text)
+    clearTimeout(this.adjustCompositionElTimeoutId)
   }
 
   private fetchCandidateAsync() {
@@ -652,6 +653,7 @@ export class SimpleIme {
     this.hideComposition()
     this.clearCandidate()
     this.hideStatus()
+    clearTimeout(this.adjustCompositionElTimeoutId)
   }
 
   dispose() {
@@ -659,5 +661,6 @@ export class SimpleIme {
     this.inputViewHandle?.dispose()
     this.injectedStyleEl?.remove()
     this.unbindEvents()
+    clearTimeout(this.adjustCompositionElTimeoutId)
   }
 }
