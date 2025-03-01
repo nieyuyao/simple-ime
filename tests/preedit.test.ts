@@ -219,5 +219,41 @@ describe('segment', () => {
     replaceSegments({ f: 1, w: '😂', matchLength: 6 })
     // 😂le => cursorPosition should be 3
     expect(getCursorPosition()).toBe(3)
+    clearPreeditSegments()
+    setupPreeditSegments([
+      {
+        w: '',
+        pinyins: ['xiao'],
+      },
+      {
+        w: '',
+        pinyins: ['ku'],
+      },
+      {
+        w: '',
+        pinyins: ['le'],
+      },
+    ])
+    forceUpdateCursorPosition(7)
+    replaceSegments({ f: 1, w: '😂', matchLength: 6 })
+    expect(getCursorPosition()).toBe(2)
+    clearPreeditSegments()
+    setupPreeditSegments([
+      {
+        w: '',
+        pinyins: ['xiao'],
+      },
+      {
+        w: '',
+        pinyins: ['ku'],
+      },
+      {
+        w: '',
+        pinyins: ['le'],
+      },
+    ])
+    forceUpdateCursorPosition(2)
+    replaceSegments({ f: 1, w: '😂', matchLength: 6 })
+    expect(getCursorPosition()).toBe(3)
   })
 })

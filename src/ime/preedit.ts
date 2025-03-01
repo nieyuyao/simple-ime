@@ -39,7 +39,7 @@ function getWordLength(w: string) {
 }
 
 export function getPreeditSegmentLength(seg: PreeditSegment) {
-  return seg.w ? seg.w.length : seg.pinyins.join('').length
+  return seg.w ? getWordLength(seg.w) : seg.pinyins.join('').length
 }
 
 export function getPreeditSegmentsPinyinLength() {
