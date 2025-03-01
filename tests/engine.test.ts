@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { backwardLookupCandidates, forwardLookupCandidates, mergeSegments } from '../src/engine'
+import { backwardLookupCandidates, forwardLookupCandidates, mergeSegments, requestCandidates } from '../src/engine'
 
 describe('test engine', () => {
   it('mergeSegments', () => {
@@ -31,5 +31,15 @@ describe('test engine', () => {
     expect(backwardLookupCandidates(['ni', 'ii'], 1)[0].w).toBe('你ii')
     expect(backwardLookupCandidates(['kongjianzhan'], 0)[0].w).toBe('空间站')
     expect(backwardLookupCandidates(['i', 'i'], 0)[0].w).toBe('i')
+    expect(backwardLookupCandidates(['xiao', 'ku'], 1)[0].w).toBe('😂')
+  })
+
+  it('requestCandidates', () => {
+    expect(requestCandidates('nichifanleme').candidates.length).toBeGreaterThan(0)
+    expect(requestCandidates('iiiiiiii').candidates.length).toBeGreaterThan(0)
+    expect(requestCandidates('ii\'i\'i\'\'iiii').candidates.length).toBeGreaterThan(0)
+    expect(requestCandidates('xiaokule').candidates.length).toBeGreaterThan(0)
+    expect(requestCandidates('nihaodededexiaokuelelelelelelele').candidates.length).toBeGreaterThan(0)
+    expect(requestCandidates('wobuanguanzhidaogaizenmbannenihusonechifanlemewohuzhidaoa').candidates.length).toBeGreaterThan(0)
   })
 })

@@ -20,7 +20,7 @@ export const dict: Dict = JSON.parse(dictTxt)
 
 export const trie = new PTrie(packedTrieTxt)
 
-function getWordsFormDict(pinyin: string): DictWord[] {
+export function getWordsFormDict(pinyin: string): DictWord[] {
   const reg = /(\D+)(\d+)/g
   const content = dict[pinyin]
   if (!content) {
@@ -178,15 +178,14 @@ export function requestCandidates(
   let dividedResult: Candidate[] = []
   if (category & Category.Backward) {
     // Best Candidates
-    bestResult.push(...backwardLookupCandidates(segments, segments.length - 1))
-    // Divided Candidates
-    dividedResult.push(...backwardLookupCandidates(segments, 0, -1))
+    for (let i = 0; i < segments.length; i++) {
+      bestResult.push(...backwardLookupCandidates(segments, i))
+    }
   }
   if (category & Category.Forward) {
-    // Best Candidates
-    bestResult.push(...forwardLookupCandidates(segments, segments.length - 1))
-    // Segment Candidates
-    dividedResult.push(...forwardLookupCandidates(segments, 0, -1))
+    for (let i = 0; i < segments.length; i++) {
+      bestResult.push(...forwardLookupCandidates(segments, i))
+    }
   }
   bestResult = bestResult.filter((cand) => {
     const key = `${cand.w}${cand.f}`

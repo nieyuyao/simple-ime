@@ -26,7 +26,7 @@ function splitDict() {
     fs.mkdirSync(path.resolve(__dirname, '../../temp'))
   }
   const trie = new Trie(pinyinList.join(' '))
-  fs.writeFileSync(path.resolve(__dirname, '../../temp/dict.txt'), compress(JSON.stringify(dict)))
+  fs.writeFileSync(path.resolve(__dirname, '../../temp/dict.txt'), JSON.stringify(compress(JSON.stringify(dict))))
   fs.writeFileSync(path.resolve(__dirname, '../../temp/packed-trie.txt'), trie.pack())
 }
 

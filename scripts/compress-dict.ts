@@ -14,13 +14,29 @@ export function compress(content: string) {
       compressedDic[pinyin] += `${candidate.w}${Math.floor(candidate.f)}`
     })
   })
-  return JSON.stringify(compressedDic)
+  return compressedDic
 }
 
 function compressDict() {
   const __dirname = fileURLToPath(import.meta.url)
   const dictString = fs.readFileSync(path.resolve(__dirname, '../../dict/google-pinyin-dict.txt'), { encoding: 'utf-8' })
-  fs.writeFileSync(path.resolve(__dirname, '../../src/data/dict.txt'), compress(dictString))
+  // process emoji txt
+  const emojiText = fs.readFileSync(path.resolve(__dirname, '../../dict/emoji.txt'), { encoding: 'utf-8' })
+  const reg = /(\S+)\t(.*)\t/g
+  let res = reg.exec(emojiText)
+  const dict = compress(dictString)
+  while (res) {
+    const emoji = res[1]
+    const pinyin = res[2].split(/\s+/).join('')
+    if (dict[pinyin]) {
+      dict[pinyin] = `${dict[pinyin]}${emoji}1000`
+    }
+    else {
+      dict[pinyin] = `${emoji}1000`
+    }
+    res = reg.exec(emojiText)
+  }
+  fs.writeFileSync(path.resolve(__dirname, '../../src/data/dict.txt'), JSON.stringify(dict))
 }
 
 compressDict()
