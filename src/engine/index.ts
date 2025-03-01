@@ -178,13 +178,18 @@ export function requestCandidates(
   let dividedResult: Candidate[] = []
   if (category & Category.Backward) {
     // Best Candidates
-    for (let i = 0; i < segments.length; i++) {
-      bestResult.push(...backwardLookupCandidates(segments, i))
+    bestResult.push(...backwardLookupCandidates(segments, segments.length - 1))
+    // Segmented Candidates
+    for (let i = 0; i < segments.length - 1; i++) {
+      dividedResult.push(...backwardLookupCandidates(segments, i))
     }
   }
   if (category & Category.Forward) {
-    for (let i = 0; i < segments.length; i++) {
-      bestResult.push(...forwardLookupCandidates(segments, i))
+    // Best Candidates
+    bestResult.push(...forwardLookupCandidates(segments, segments.length - 1))
+    // Segmented Candidates
+    for (let i = 0; i < segments.length - 1; i++) {
+      dividedResult.push(...forwardLookupCandidates(segments, i))
     }
   }
   bestResult = bestResult.filter((cand) => {
