@@ -29,10 +29,10 @@ function compressDict() {
     const emoji = res[1]
     const pinyin = res[2].split(/\s+/).join('')
     if (dict[pinyin]) {
-      dict[pinyin] = `${dict[pinyin]}100${emoji}`
+      dict[pinyin] = `${dict[pinyin]}${emoji}1000`
     }
     else {
-      dict[pinyin] = `100${emoji}`
+      dict[pinyin] = `${emoji}1000`
     }
     res = reg.exec(emojiText)
   }

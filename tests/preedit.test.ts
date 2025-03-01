@@ -199,4 +199,25 @@ describe('segment', () => {
     replaceSegments({ f: 1, w: '你好', matchLength: 5 })
     expect(getPreeditSegments()).toEqual([{ w: '你好', pinyins: ['ni', 'hao'] }])
   })
+
+  it('replace segments with emoji ', () => {
+    setupPreeditSegments([
+      {
+        w: '',
+        pinyins: ['xiao'],
+      },
+      {
+        w: '',
+        pinyins: ['ku'],
+      },
+      {
+        w: '',
+        pinyins: ['le'],
+      },
+    ])
+    forceUpdateCursorPosition(8)
+    replaceSegments({ f: 1, w: '😂', matchLength: 6 })
+    // 😂le => cursorPosition should be 3
+    expect(getCursorPosition()).toBe(3)
+  })
 })

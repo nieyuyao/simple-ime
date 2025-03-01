@@ -31,6 +31,13 @@ export function recoverySegments() {
   moveCursorPositionEnd()
 }
 
+function getWordLength(w: string) {
+  // eslint-disable-next-line ts/ban-ts-comment
+  // @ts-ignore
+  const segments = new Intl.Segmenter().segment(w)
+  return [...segments].length
+}
+
 export function getPreeditSegmentLength(seg: PreeditSegment) {
   return seg.w ? seg.w.length : seg.pinyins.join('').length
 }
@@ -102,7 +109,7 @@ export function replaceSegments(cand: Candidate) {
     moveCursorPositionEnd()
   }
   else {
-    cursorPosition -= (targetMatchLength - cand.w.length)
+    cursorPosition -= (targetMatchLength - getWordLength(cand.w))
   }
 }
 
@@ -122,7 +129,7 @@ export function insertLetter(c: string) {
   for (let i = 0; i < preeditSegments.length; i++) {
     const seg = preeditSegments[i]
     if (seg.w) {
-      pos += seg.w.length
+      pos += getWordLength(seg.w)
       continue
     }
     for (let j = 0; j < seg.pinyins.length; j++) {
@@ -148,7 +155,7 @@ export function deleteLetter() {
   for (let i = 0; i < preeditSegments.length; i++) {
     const seg = preeditSegments[i]
     if (seg.w) {
-      pos += seg.w.length
+      pos += getWordLength(seg.w)
       continue
     }
     for (let j = 0; j < seg.pinyins.length; j++) {
@@ -173,7 +180,7 @@ export function moveCursorPositionLeft() {
   for (let i = 0; i < preeditSegments.length; i++) {
     const seg = preeditSegments[i]
     if (seg.w) {
-      limit += seg.w.length
+      limit += getWordLength(seg.w)
     }
     else {
       break
@@ -213,7 +220,7 @@ export function splitPreeditSegmentsByCursorPosition() {
     const seg = preeditSegments[i]
     if (seg.w) {
       converted += seg.w
-      pos += seg.w.length
+      pos += getWordLength(seg.w)
     }
     else {
       const splits = seg.pinyins
