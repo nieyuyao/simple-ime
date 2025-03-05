@@ -175,33 +175,44 @@ export function requestCandidates(
   const segments = segmentsList[0]
   const already = new Set<string>()
   let bestResult: Candidate[] = []
-  let dividedResult: Candidate[] = []
+  let segmentedResult: Candidate[] = []
   if (category & Category.Backward) {
     // Best Candidates
     bestResult.push(...backwardLookupCandidates(segments, segments.length - 1))
     // Segmented Candidates
-    for (let i = 0; i < segments.length - 1; i++) {
-      dividedResult.push(...backwardLookupCandidates(segments, i))
+    for (let i = 0; i < segments.length - 2; i++) {
+      segmentedResult.push(...backwardLookupCandidates(segments, i))
     }
   }
   if (category & Category.Forward) {
     // Best Candidates
     bestResult.push(...forwardLookupCandidates(segments, segments.length - 1))
     // Segmented Candidates
-    for (let i = 0; i < segments.length - 1; i++) {
-      dividedResult.push(...forwardLookupCandidates(segments, i))
+    for (let i = 0; i < segments.length - 2; i++) {
+      segmentedResult.push(...forwardLookupCandidates(segments, i))
     }
   }
+  // Dict Candidates
+  for (let i = 0; i < Math.min(segments.length, 6); i++) {
+    const { pinyin, text } = mergeSegments(segments, 0, i)
+    const words = getWordsFormDict(pinyin)
+    words.forEach((w) => {
+      segmentedResult.push({
+        ...w,
+        matchLength: text.length,
+      })
+    })
+  }
   bestResult = bestResult.filter((cand) => {
-    const key = `${cand.w}${cand.f}`
+    const key = cand.w
     if (already.has(key)) {
       return false
     }
     already.add(key)
     return true
   })
-  dividedResult = dividedResult.filter((cand) => {
-    const key = `${cand.w}${cand.f}`
+  segmentedResult = segmentedResult.filter((cand) => {
+    const key = cand.w
     if (already.has(key)) {
       return false
     }
@@ -212,7 +223,7 @@ export function requestCandidates(
     segments,
     candidates: [
       ...bestResult.sort((a, b) => b.f - a.f),
-      ...dividedResult.sort((a, b) => b.f - a.f),
+      ...segmentedResult.sort((a, b) => b.f - a.f),
     ],
   }
 }

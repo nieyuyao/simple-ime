@@ -1,5 +1,16 @@
+import type { Candidate } from '../src/types'
 import { describe, expect, it } from 'vitest'
-import { backwardLookupCandidates, forwardLookupCandidates, mergeSegments, requestCandidates } from '../src/engine'
+import {
+  backwardLookupCandidates,
+  forwardLookupCandidates,
+  mergeSegments,
+  requestCandidates,
+} from '../src/engine'
+
+function hasDuplicateCandidate(candidates: Candidate[]) {
+  const set = new Set(candidates.map(cand => cand.w))
+  return set.size !== candidates.length
+}
 
 describe('test engine', () => {
   it('mergeSegments', () => {
@@ -39,7 +50,22 @@ describe('test engine', () => {
     expect(requestCandidates('iiiiiiii').candidates.length).toBeGreaterThan(0)
     expect(requestCandidates('ii\'i\'i\'\'iiii').candidates.length).toBeGreaterThan(0)
     expect(requestCandidates('xiaokule').candidates.length).toBeGreaterThan(0)
-    expect(requestCandidates('nihaodededexiaokuelelelelelelele').candidates.length).toBeGreaterThan(0)
-    expect(requestCandidates('wobuanguanzhidaogaizenmbannenihusonechifanlemewohuzhidaoa').candidates.length).toBeGreaterThan(0)
+    expect(requestCandidates('nihaodededexiaokuelelelelelelele').candidates.length).toBeGreaterThan(
+      0,
+    )
+    expect(
+      requestCandidates('wobuanguanzhidaogaizenmbannenihusonechifanlemewohuzhidaoa').candidates
+        .length,
+    ).toBeGreaterThan(0)
+    expect(
+      requestCandidates(
+        'wobuanguanzhidaogaizenmbannenihusonechifanlemewohuzhidaoawobuanguanzhidaogaizenmbannenihusonechifanlemewohuzhidaoawobuanguanzhidaogaizenmbannenihusonechifanlemewohuzhidaoawobuanguanzhidaogaizenmbannenihusonechifanlemewohuzhidaoawobuanguanzhidaogaizenmbannenihusonechifanlemewohuzhidaoa',
+      ).candidates.length,
+    ).toBeGreaterThan(0)
+  })
+
+  it('should not include duplicate candidates', () => {
+    expect(hasDuplicateCandidate(requestCandidates('nihao').candidates)).toBeFalsy()
+    expect(hasDuplicateCandidate(requestCandidates('meiyoushenme').candidates)).toBeFalsy()
   })
 })
