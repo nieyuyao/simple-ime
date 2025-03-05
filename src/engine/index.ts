@@ -11,7 +11,7 @@ enum Category {
 
 type Dict = Record<string, string>
 
-interface DictWord {
+export interface DictWord {
   w: string
   f: number
 }
@@ -35,7 +35,7 @@ export function getWordsFormDict(pinyin: string): DictWord[] {
     })
     res = reg.exec(content)
   }
-  return list.sort((a, b) => b.f - a.f)
+  return list
 }
 
 export function mergeSegments(
@@ -203,6 +203,7 @@ export function requestCandidates(
       })
     })
   }
+  bestResult.sort((a, b) => b.f - a.f)
   bestResult = bestResult.filter((cand) => {
     const key = cand.w
     if (already.has(key)) {
@@ -211,6 +212,7 @@ export function requestCandidates(
     already.add(key)
     return true
   })
+  segmentedResult.sort((a, b) => b.f - a.f)
   segmentedResult = segmentedResult.filter((cand) => {
     const key = cand.w
     if (already.has(key)) {
@@ -222,8 +224,8 @@ export function requestCandidates(
   return {
     segments,
     candidates: [
-      ...bestResult.sort((a, b) => b.f - a.f),
-      ...segmentedResult.sort((a, b) => b.f - a.f),
+      ...bestResult,
+      ...segmentedResult,
     ],
   }
 }
