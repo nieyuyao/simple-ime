@@ -8,6 +8,7 @@
   "repository": {
     "url": "https://github.com/nieyuyao/simple-ime.git"
   },
+  "keywords": ["ime", "input method", "web ime", "pinyin"],
   "main": "./dist/simple-ime.js",
   "module": "./dist/simple-ime.es.js",
   "unpkg": "./dist/simple-ime.umd.js",
