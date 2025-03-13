@@ -1,20 +1,23 @@
-export function isEditableElement(element) {
-  if (element.readOnly) {
+export function isEditableElement(element: Element) {
+  if ((element as HTMLInputElement).readOnly) {
     return false
   }
-  switch (element.tagName.toUpperCase()) {
+  const tagName = element.tagName.toUpperCase()
+  switch (tagName) {
     case 'TEXTAREA':
       return true
-    case 'INPUT':
-      return element.type.toUpperCase() === 'TEXT' || element.type.toUpperCase() === 'SEARCH'
+    case 'INPUT': {
+      const eleType = (element as HTMLInputElement).type.toUpperCase()
+      return eleType === 'TEXT' || eleType === 'SEARCH'
+    }
     case 'IFRAME':
       return false
     default:
-      return element.isContentEditable
+      return (element as HTMLDivElement).isContentEditable
   }
 }
 
-function insertContentIntoEditable(content) {
+function insertContentIntoEditable(content: string) {
   const selection = window.getSelection()
   if (!selection || !selection.rangeCount) {
     return false

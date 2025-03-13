@@ -1,4 +1,4 @@
-import type { Candidate } from '../types'
+import type { Candidate, DictWord } from '../types'
 import { PTrie } from 'dawg-lookup'
 import dictTxt from '../data/dict.txt?raw'
 import packedTrieTxt from '../data/packed-trie.txt?raw'
@@ -10,11 +10,6 @@ enum Category {
 }
 
 type Dict = Record<string, string>
-
-export interface DictWord {
-  w: string
-  f: number
-}
 
 export const dict: Dict = JSON.parse(dictTxt)
 
@@ -203,24 +198,17 @@ export function requestCandidates(
       })
     })
   }
+  const filter = (cand: Candidate) => {
+    if (already.has(cand.w)) {
+      return false
+    }
+    already.add(cand.w)
+    return true
+  }
+  bestResult = bestResult.filter(filter)
   bestResult.sort((a, b) => b.f - a.f)
-  bestResult = bestResult.filter((cand) => {
-    const key = cand.w
-    if (already.has(key)) {
-      return false
-    }
-    already.add(key)
-    return true
-  })
+  segmentedResult = segmentedResult.filter(filter)
   segmentedResult.sort((a, b) => b.f - a.f)
-  segmentedResult = segmentedResult.filter((cand) => {
-    const key = cand.w
-    if (already.has(key)) {
-      return false
-    }
-    already.add(key)
-    return true
-  })
   return {
     segments,
     candidates: [

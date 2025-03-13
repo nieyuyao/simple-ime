@@ -188,10 +188,10 @@ export class Ime {
     }
     if (/^[a-z']$/.test(e.key)) {
       e.preventDefault()
-      if (e.key === '\'' && !this.typeOn) {
-        return
-      }
-      if (getPreeditSegmentsPinyinLength() >= 16) {
+      if (
+        (e.key === '\'' && !this.typeOn)
+        || getPreeditSegmentsPinyinLength() >= 16
+      ) {
         return
       }
       insertLetter(e.key)

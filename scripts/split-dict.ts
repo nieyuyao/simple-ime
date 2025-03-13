@@ -1,4 +1,4 @@
-import type { DictWord } from '../src/engine'
+import type { DictWord } from '../src/types'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'

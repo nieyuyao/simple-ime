@@ -20,3 +20,8 @@ export interface Candidate {
   w: string
   matchLength: number
 }
+
+export interface DictWord {
+  w: string
+  f: number
+}

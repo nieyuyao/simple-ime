@@ -113,17 +113,7 @@ export function replaceSegments(cand: Candidate) {
   }
 }
 
-export function insertLetter(c: string) {
-  if (preeditSegments.length <= 0) {
-    preeditSegments = [
-      {
-        w: '',
-        pinyins: [c],
-      },
-    ]
-    cursorPosition++
-    return
-  }
+function findSegmentPinyinAtCursorPosition(callback: (seg: PreeditSegment, i: number, j: number, pos: number) => void) {
   let pos = 0
   let updated = false
   for (let i = 0; i < preeditSegments.length; i++) {
@@ -135,9 +125,8 @@ export function insertLetter(c: string) {
     for (let j = 0; j < seg.pinyins.length; j++) {
       const nextPos = pos + seg.pinyins[j].length
       if (nextPos >= cursorPosition) {
-        seg.pinyins[j] = seg.pinyins[j].slice(0, cursorPosition - pos) + c + seg.pinyins[j].slice(cursorPosition - pos)
+        callback(seg, i, j, pos)
         // update cursor position
-        cursorPosition++
         updated = true
         break
       }
@@ -149,30 +138,28 @@ export function insertLetter(c: string) {
   }
 }
 
-export function deleteLetter() {
-  let pos = 0
-  let updated = false
-  for (let i = 0; i < preeditSegments.length; i++) {
-    const seg = preeditSegments[i]
-    if (seg.w) {
-      pos += getWordLength(seg.w)
-      continue
-    }
-    for (let j = 0; j < seg.pinyins.length; j++) {
-      const nextPos = pos + seg.pinyins[j].length
-      if (nextPos >= cursorPosition) {
-        seg.pinyins[j] = seg.pinyins[j].slice(0, cursorPosition - pos - 1) + seg.pinyins[j].slice(cursorPosition - pos)
-        // update cursor position
-        cursorPosition--
-        updated = true
-        break
-      }
-      pos = nextPos
-    }
-    if (updated) {
-      break
-    }
+export function insertLetter(c: string) {
+  if (preeditSegments.length <= 0) {
+    preeditSegments = [
+      {
+        w: '',
+        pinyins: [c],
+      },
+    ]
+    cursorPosition++
+    return
   }
+  findSegmentPinyinAtCursorPosition((seg, _, j, pos) => {
+    seg.pinyins[j] = seg.pinyins[j].slice(0, cursorPosition - pos) + c + seg.pinyins[j].slice(cursorPosition - pos)
+    cursorPosition++
+  })
+}
+
+export function deleteLetter() {
+  findSegmentPinyinAtCursorPosition((seg, _, j, pos) => {
+    seg.pinyins[j] = seg.pinyins[j].slice(0, cursorPosition - pos - 1) + seg.pinyins[j].slice(cursorPosition - pos)
+    cursorPosition--
+  })
 }
 
 export function moveCursorPositionLeft() {
@@ -247,6 +234,7 @@ export function splitPreeditSegmentsByCursorPosition() {
   return { front: `${converted}${front}`, behind }
 }
 
+// composite segments to html
 export function compositePreedit() {
   const { front, behind } = splitPreeditSegmentsByCursorPosition()
   return `<span>${front}</span><span class="sime-cursor"></span><span>${behind}</span>`
@@ -290,11 +278,13 @@ export function preeditSegments2Text() {
   }, '')
 }
 
+// for testing
 export function setupPreeditSegments(segments: PreeditSegment[], cursorPos = 0) {
   preeditSegments = segments
   cursorPosition = cursorPos
 }
 
+// for testing
 export function forceUpdateCursorPosition(cursorPos: number) {
   cursorPosition = cursorPos
 }
