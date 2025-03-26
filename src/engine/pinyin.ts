@@ -74,9 +74,9 @@ export function splitText(text: string): string[][] {
 }
 
 export function cut(text: string) {
-  const splits = splitText(text)
-  if (splits.length > 0) {
-    return splits
+  const validatedPinyins = splitText(text)
+  if (validatedPinyins.length > 0) {
+    return validatedPinyins
   }
   const reg = /[^']+/g
   let res = reg.exec(text)
@@ -113,10 +113,8 @@ export function cut(text: string) {
     segs.length = 0
     res = reg.exec(text)
   }
-
   if (lastIndex !== text.length) {
     acc[acc.length - 1] += text.substring(lastIndex, text.length)
   }
-
   return [acc]
 }
