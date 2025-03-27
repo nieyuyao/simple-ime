@@ -113,10 +113,10 @@ export function forwardLookupCandidates(segments: string[], end: number, opts: L
   let j = 0
   let collect: Candidate[] = []
   for (let i = 0; i <= end; i++) {
-    const { pinyin: combinePinyin, text } = mergeSegments(segments, j, i)
+    const { pinyin: combinePinyin, text } = mergeSegments(segments, j, i,  opts.corrected)
     const words = getWordsFormDict(combinePinyin)
     if (words.length <= 0) {
-      const { pinyin: lastCombinePinyin, text: lastCombineText } = mergeSegments(segments, j, i - 1)
+      const { pinyin: lastCombinePinyin, text: lastCombineText } = mergeSegments(segments, j, i - 1, opts.corrected)
       let lastWords = getWordsFormDict(lastCombinePinyin)
       if (lastWords.length <= 0) {
         lastWords = [

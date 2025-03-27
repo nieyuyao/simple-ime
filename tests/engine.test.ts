@@ -68,6 +68,8 @@ describe('test engine', () => {
     requestCandidates(
       'wobuanguanzhidaogaizenmbannenihusnechifanlemewohuzhidaoawobuanguanzhidaogaizenmbannenihusonechifanlemewohuzhidaoawobuanguanzhidaogaizenmbannenihusonechifanlemewohuzhidaoawobuanguanzhidaogaizenmbannenihusonechifanlemewohuzhidaoawobuanguanzhidaogaizenmbannenihusonechifanlemewohuzhidaoa',
     )
+
+    console.log(requestCandidates('zhnogguo'))
   })
 
   it('should not include duplicate candidates', () => {
