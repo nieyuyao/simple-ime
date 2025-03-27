@@ -1,8 +1,6 @@
 import type { Candidate, DictWord } from '../types'
-import { PTrie } from 'dawg-lookup'
 import dictTxt from '../data/dict.txt?raw'
-import packedTrieTxt from '../data/packed-trie.txt?raw'
-import { cut } from './pinyin'
+import { split } from './pinyin'
 
 enum Category {
   Backward = 0b0001,
@@ -13,7 +11,10 @@ type Dict = Record<string, string>
 
 export const dict: Dict = JSON.parse(dictTxt)
 
-export const trie = new PTrie(packedTrieTxt)
+interface LookUpOptions {
+  limit: number
+  corrected?: string[]
+}
 
 export function getWordsFormDict(pinyin: string): DictWord[] {
   const reg = /(\D+)(\d+)/g
@@ -35,13 +36,14 @@ export function getWordsFormDict(pinyin: string): DictWord[] {
 
 export function mergeSegments(
   segments: string[],
-  start = 0,
-  end = 0,
+  start: number,
+  end: number,
+  corrected?: string[],
 ): { pinyin: string, text: string } {
   let text = ''
   let pinyin = ''
   for (let i = start; i <= end; i++) {
-    const matched = segments[i].match(/[^']+/)
+    const matched = corrected ? corrected[i].match(/[^']+/) : segments[i].match(/[^']+/)
     pinyin += matched ? matched[0] : ''
     text += segments[i]
   }
@@ -65,11 +67,11 @@ function joinCandidates(a: Candidate[], b: Candidate[]): Candidate[] {
   return result
 }
 
-export function backwardLookupCandidates(segments: string[], end: number, limit = 2): Candidate[] {
+export function backwardLookupCandidates(segments: string[], end: number, opts: LookUpOptions): Candidate[] {
   let collect: Candidate[] = []
   let j = 0
   for (let i = end; i >= j; i--) {
-    const { pinyin, text } = mergeSegments(segments, j, i)
+    const { pinyin, text } = mergeSegments(segments, j, i, opts.corrected)
     let words = getWordsFormDict(pinyin)
     if (i === j) {
       words = words.length
@@ -99,15 +101,15 @@ export function backwardLookupCandidates(segments: string[], end: number, limit 
       j = i + 1
       i = end + 1
     }
-    if (collect.length > limit && limit !== -1) {
-      collect.splice(limit, collect.length - limit)
+    if (collect.length > opts.limit && opts.limit !== -1) {
+      collect.splice(opts.limit, collect.length - opts.limit)
     }
   }
 
   return collect
 }
 
-export function forwardLookupCandidates(segments: string[], end: number, limit = 2): Candidate[] {
+export function forwardLookupCandidates(segments: string[], end: number, opts: LookUpOptions): Candidate[] {
   let j = 0
   let collect: Candidate[] = []
   for (let i = 0; i <= end; i++) {
@@ -132,7 +134,7 @@ export function forwardLookupCandidates(segments: string[], end: number, limit =
       }))
       j = i
       if (i === end) {
-        const matched = segments[i].match(/[^']+/)
+        const matched = opts.corrected ? opts.corrected[i].match(/[^']+/) : segments[i].match(/[^']+/)
         collect = joinCandidates(collect, [
           {
             f: 0,
@@ -151,8 +153,8 @@ export function forwardLookupCandidates(segments: string[], end: number, limit =
         }
       }))
     }
-    if (collect.length > limit && limit !== -1) {
-      collect.splice(limit, collect.length - limit)
+    if (collect.length > opts.limit && opts.limit !== -1) {
+      collect.splice(opts.limit, collect.length - opts.limit)
     }
   }
   return collect
@@ -165,31 +167,33 @@ export function requestCandidates(
     segments: string[]
     candidates: Candidate[]
   } {
-  const segmentsList = cut(text)
-  segmentsList.sort((a, b) => a.length - b.length)
-  const segments = segmentsList[0]
+  const { result: segments, corrected } = split(text, { useCorrector: true })
+  if (corrected && corrected.length !== segments.length) {
+    console.warn('length of corrected and splitted must be equal')
+    return { segments: [], candidates: [] }
+  }
   const already = new Set<string>()
   let bestResult: Candidate[] = []
   let segmentedResult: Candidate[] = []
   if (category & Category.Backward) {
     // Best Candidates
-    bestResult.push(...backwardLookupCandidates(segments, segments.length - 1))
+    bestResult.push(...backwardLookupCandidates(segments, segments.length - 1, { limit: 2, corrected }))
     // Segmented Candidates
     for (let i = 0; i < segments.length - 2; i++) {
-      segmentedResult.push(...backwardLookupCandidates(segments, i))
+      segmentedResult.push(...backwardLookupCandidates(segments, i, { limit: 2, corrected }))
     }
   }
   if (category & Category.Forward) {
     // Best Candidates
-    bestResult.push(...forwardLookupCandidates(segments, segments.length - 1))
+    bestResult.push(...forwardLookupCandidates(segments, segments.length - 1, { limit: 2, corrected }))
     // Segmented Candidates
     for (let i = 0; i < segments.length - 2; i++) {
-      segmentedResult.push(...forwardLookupCandidates(segments, i))
+      segmentedResult.push(...forwardLookupCandidates(segments, i, { limit: 2, corrected }))
     }
   }
   // Dict Candidates
   for (let i = 0; i < Math.min(segments.length, 6); i++) {
-    const { pinyin, text } = mergeSegments(segments, 0, i)
+    const { pinyin, text } = mergeSegments(segments, 0, i, corrected)
     const words = getWordsFormDict(pinyin)
     words.forEach((w) => {
       segmentedResult.push({

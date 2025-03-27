@@ -1,4 +1,5 @@
 import pinyinText from '../data/pinyin.txt?raw'
+import { damerauLevenshteinDistanceCorrector } from './corrector'
 
 export const pinyinSet = new Set<string>(pinyinText.split('\n'))
 
@@ -10,17 +11,14 @@ export function appendAns(ans: string[][], compAns: string[][]) {
   }
   for (let i = 0; i < ansLength; i++) {
     for (let j = 0; j < compAns.length; j++) {
-      ans.push([
-        ...ans[i],
-        ...compAns[j],
-      ])
+      ans.push([...ans[i], ...compAns[j]])
     }
   }
   ans.splice(0, ansLength)
   return ans
 }
 
-export function splitText(text: string): string[][] {
+export function splitSyllablesExhaustive(text: string): string[][] {
   const ans: string[][] = []
   if (text.includes('\'')) {
     const reg = /[^']+/g
@@ -28,7 +26,7 @@ export function splitText(text: string): string[][] {
     let lastIndex = 0
     while (res) {
       const index = res.index
-      const compAns = splitText(res[0])
+      const compAns = splitSyllablesExhaustive(res[0])
       if (compAns.length <= 0) {
         return []
       }
@@ -56,12 +54,9 @@ export function splitText(text: string): string[][] {
       if (pinyinSet.has(pre)) {
         const next = text.substring(i + 1)
         if (next) {
-          const appendices = splitText(next)
+          const appendices = splitSyllablesExhaustive(next)
           appendices.forEach((append) => {
-            ans.push([
-              pre,
-              ...append,
-            ])
+            ans.push([pre, ...append])
           })
         }
         else {
@@ -73,48 +68,101 @@ export function splitText(text: string): string[][] {
   return ans
 }
 
-export function cut(text: string) {
-  const validatedPinyins = splitText(text)
-  if (validatedPinyins.length > 0) {
-    return validatedPinyins
-  }
+export function splitSyllablesByExistPinyin(text: string, callback?: (quotes: string, collector: string[], indexes: number[]) => void) {
   const reg = /[^']+/g
-  let res = reg.exec(text)
+  let exceed = reg.exec(text)
   let lastIndex = 0
-  const acc: string[] = []
   const segs: string[] = []
-  while (res) {
-    const index = res.index
+  const indexes: number[] = []
+  const res: string[] = []
+  while (exceed) {
+    const index = exceed.index
     let quotes = ''
     if (lastIndex !== index) {
       quotes = text.substring(lastIndex, index)
     }
-    lastIndex = index + res[0].length
-    const subText = res![0]
-    for (let i = 0; i < subText.length; i++) {
-      let j = Math.min(i + 4, subText.length - 1)
+    lastIndex = index + exceed[0].length
+    const sub = exceed![0]
+    for (let i = 0; i < sub.length; i++) {
+      let j = Math.min(i + 4, sub.length - 1)
       for (; j >= i + 1; j--) {
-        const seg = subText.substring(i, j + 1)
+        const seg = sub.substring(i, j + 1)
         if (pinyinSet.has(seg)) {
           segs.push(seg)
+          indexes.push(segs.length - 1)
           i = j + 1
           break
         }
       }
       if (j === i) {
-        segs.push(subText.charAt(i))
+        segs.push(sub.charAt(i))
       }
       else {
         i--
       }
     }
+    callback?.(quotes, segs, indexes)
     segs[0] = quotes + segs[0]
-    acc.push(...segs)
+    res.push(...segs)
     segs.length = 0
-    res = reg.exec(text)
+    indexes.length = 0
+    exceed = reg.exec(text)
   }
   if (lastIndex !== text.length) {
-    acc[acc.length - 1] += text.substring(lastIndex, text.length)
+    res[res.length - 1] += text.substring(lastIndex, text.length)
   }
-  return [acc]
+  return res
+}
+
+export function splitSyllablesByExistPinyinWithCorrector(text: string) {
+  const corrected: string[] = []
+  const res: string[] = []
+  splitSyllablesByExistPinyin(text, (quotes: string, collector: string[], indexes: number[]) => {
+    let j = 0
+    let k = 0
+    const len = corrected.length
+    for (let i = 0; i < collector.length; i++) {
+      if (i === indexes[k] || i === collector.length - 1) {
+        const end = i === indexes[k] ? i : i + 1
+        const pinyin = collector.slice(j, end).join('')
+        let correctRes: string[] = []
+        if (pinyin.length >= 3) {
+          correctRes = damerauLevenshteinDistanceCorrector(pinyin, pinyinSet, 2)
+        }
+        if (correctRes.length) {
+          corrected.push(correctRes[0])
+          res.push(pinyin)
+        }
+        else {
+          const slice = collector.slice(j, end).map(s => s)
+          corrected.push(...slice)
+          res.push(...slice)
+        }
+        if (i === indexes[k]) {
+          corrected.push(collector[i])
+          res.push(collector[i])
+        }
+        k++
+        j = i + 1
+      }
+    }
+    corrected[len] = quotes + corrected[len]
+    res[len] = quotes + res[len]
+  })
+  return { result: res, corrected }
+}
+
+export function split(
+  text: string,
+  options?: { useCorrector: boolean },
+): { result: string[], corrected?: string[] } {
+  const validatedSyllablesList = splitSyllablesExhaustive(text)
+  if (validatedSyllablesList.length > 0) {
+    return { result: validatedSyllablesList.sort((a, b) => a.length - b.length)[0] }
+  }
+  const useCorrector = Boolean(options?.useCorrector)
+  if (!useCorrector) {
+    return { result: splitSyllablesByExistPinyin(text) }
+  }
+  return splitSyllablesByExistPinyinWithCorrector(text)
 }

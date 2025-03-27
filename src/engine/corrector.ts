@@ -1,4 +1,10 @@
 export function nearSwapCorrector(s: string, pinyinSet: Set<string>): string[] {
+  if (s.length <= 0) {
+    return []
+  }
+  if (s.length > 5) {
+    return []
+  }
   const res: Array<string> = []
   for (const s2 of pinyinSet) {
     if (s2.length !== s.length) {
@@ -49,6 +55,9 @@ export function calcDamerauLevenshteinDistance(s1: string, s2: string): number {
 // Damerau Levenshtein Distance https://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance
 // https://github.com/rime/librime/blob/1c23358157934bd6e6d6981f0c0164f05393b497/src/rime/dict/corrector.cc#L192C1-L192C43
 export function damerauLevenshteinDistanceCorrector(s: string, pinyinSet: Set<string>, threshold: number): string[] {
+  if (s.length <= 0 || s.length > 5 + threshold) {
+    return []
+  }
   let minD = threshold + 1
   const res: Array<{ d: number, s: string, diff: number }> = []
   for (const s2 of pinyinSet) {
@@ -95,6 +104,9 @@ export function calcLevenshteinDistance(s1: string, s2: string): number {
 // Levenshtein Distance
 // https://github.com/rime/librime/blob/1c23358157934bd6e6d6981f0c0164f05393b497/src/rime/dict/corrector.cc#L163
 export function levenshteinDistanceCorrector(s: string, pinyinSet: Set<string>, threshold: number): string[] {
+  if (s.length <= 0 || s.length > 5 + threshold) {
+    return []
+  }
   const res: Array<{ d: number, s: string, diff: number }> = []
   let minD = threshold + 1
   for (const s2 of pinyinSet) {

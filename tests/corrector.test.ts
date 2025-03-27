@@ -19,6 +19,7 @@ it('calc damerau levenshtein distance', () => {
 })
 
 it('damerau levenshtein distance corrector', () => {
+  expect(damerauLevenshteinDistanceCorrector('', pinyinSet, 2)).toEqual([])
   expect(damerauLevenshteinDistanceCorrector('chnog', pinyinSet, 2)[0]).toEqual('chong')
   expect(damerauLevenshteinDistanceCorrector('zhoong', pinyinSet, 2)[0]).toEqual('zhong')
 })
