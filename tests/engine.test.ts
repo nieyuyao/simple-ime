@@ -15,10 +15,10 @@ function hasDuplicateCandidate(candidates: Candidate[]) {
 describe('test engine', () => {
   it('mergeSegments', () => {
     expect(mergeSegments(['ni', 'hao'], 0, 1).pinyin).toBe('nihao')
-    expect(mergeSegments(['ni\'', 'hao'], 0, 1).pinyin).toBe('nihao')
-    expect(mergeSegments(['\'ni\'', 'hao'], 0, 1).pinyin).toBe('nihao')
-    expect(mergeSegments(['\'ni\'', '\'hao'], 0, 1).pinyin).toBe('nihao')
-    expect(mergeSegments(['\'\'', '\'\''], 0, 1).pinyin).toBe('')
+    expect(mergeSegments(["ni'", 'hao'], 0, 1).pinyin).toBe('nihao')
+    expect(mergeSegments(["'ni'", 'hao'], 0, 1).pinyin).toBe('nihao')
+    expect(mergeSegments(["'ni'", "'hao"], 0, 1).pinyin).toBe('nihao')
+    expect(mergeSegments(["''", "''"], 0, 1).pinyin).toBe('')
   })
 
   it('forwardLookupCandidates', () => {
@@ -27,7 +27,7 @@ describe('test engine', () => {
     expect(forwardLookupCandidates(['zen', 'me', 'yang'], 2, lookUpOpts)[0].w).toBe('怎么样')
     expect(forwardLookupCandidates(['ni', 'a', 'hao'], 2, lookUpOpts)[0].w).toBe('你啊hao')
     expect(forwardLookupCandidates(['bu', 'zhi', 'dao'], 2, lookUpOpts)[0].w).toBe('不知dao')
-    expect(forwardLookupCandidates(['ni\'', 'hao'], 1, lookUpOpts)[0].w).toBe('你好')
+    expect(forwardLookupCandidates(["ni'", 'hao'], 1, lookUpOpts)[0].w).toBe('你好')
     expect(forwardLookupCandidates(['niiii'], 0, lookUpOpts)[0].w).toBe('niiii')
     expect(forwardLookupCandidates(['ni', 'ii'], 1, lookUpOpts)[0].w).toBe('你ii')
     expect(forwardLookupCandidates(['kongjianzhan'], 0, lookUpOpts)[0].w).toBe('空间站')
@@ -39,7 +39,7 @@ describe('test engine', () => {
     expect(backwardLookupCandidates(['zen', 'me', 'yang'], 2, lookUpOpts)[0].w).toBe('怎么样')
     expect(backwardLookupCandidates(['ni', 'a', 'hao'], 2, lookUpOpts)[0].w).toBe('你啊好')
     expect(backwardLookupCandidates(['bu', 'zhi', 'dao'], 2, lookUpOpts)[0].w).toBe('不知到')
-    expect(backwardLookupCandidates(['ni\'', 'hao'], 1, lookUpOpts)[0].w).toBe('你好')
+    expect(backwardLookupCandidates(["ni'", 'hao'], 1, lookUpOpts)[0].w).toBe('你好')
     expect(backwardLookupCandidates(['niiii'], 0, lookUpOpts)[0].w).toBe('niiii')
     expect(backwardLookupCandidates(['ni', 'ii'], 1, lookUpOpts)[0].w).toBe('你ii')
     expect(backwardLookupCandidates(['kongjianzhan'], 0, lookUpOpts)[0].w).toBe('空间站')
@@ -50,7 +50,7 @@ describe('test engine', () => {
   it('requestCandidates', () => {
     expect(requestCandidates('nichifanleme').candidates.length).toBeGreaterThan(0)
     expect(requestCandidates('iiiiiiii').candidates.length).toBeGreaterThan(0)
-    expect(requestCandidates('ii\'i\'i\'\'iiii').candidates.length).toBeGreaterThan(0)
+    expect(requestCandidates("ii'i'i''iiii").candidates.length).toBeGreaterThan(0)
     expect(requestCandidates('xiaokule').candidates.length).toBeGreaterThan(0)
     expect(requestCandidates('nihaodededexiaokuelelelelelelele').candidates.length).toBeGreaterThan(
       0,
@@ -64,10 +64,6 @@ describe('test engine', () => {
         'wobuanguanzhidaogaizenmbannenihusnechifanlemewohuzhidaoawobuanguanzhidaogaizenmbannenihusonechifanlemewohuzhidaoawobuanguanzhidaogaizenmbannenihusonechifanlemewohuzhidaoawobuanguanzhidaogaizenmbannenihusonechifanlemewohuzhidaoawobuanguanzhidaogaizenmbannenihusonechifanlemewohuzhidaoa',
       ).candidates.length,
     ).toBeGreaterThan(0)
-
-    requestCandidates(
-      'wobuanguanzhidaogaizenmbannenihusnechifanlemewohuzhidaoawobuanguanzhidaogaizenmbannenihusonechifanlemewohuzhidaoawobuanguanzhidaogaizenmbannenihusonechifanlemewohuzhidaoawobuanguanzhidaogaizenmbannenihusonechifanlemewohuzhidaoawobuanguanzhidaogaizenmbannenihusonechifanlemewohuzhidaoa',
-    )
   })
 
   it('should not include duplicate candidates', () => {

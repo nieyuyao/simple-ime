@@ -76,11 +76,11 @@ describe('segment', () => {
 
   it('insert single quote', () => {
     insertLetter('i')
-    insertLetter('\'')
-    insertLetter('\'')
+    insertLetter("'")
+    insertLetter("'")
     insertLetter('n')
     insertLetter('i')
-    expect(getPreeditSegments()).toEqual([{ w: '', pinyins: ['i\'\'ni'] }])
+    expect(getPreeditSegments()).toEqual([{ w: '', pinyins: ["i''ni"] }])
   })
 
   it('deleteLetter', () => {
@@ -103,6 +103,21 @@ describe('segment', () => {
     insertLetter('i')
     moveCursorPositionLeft()
     expect(getCursorPosition()).toEqual(1)
+  })
+
+  it('moveCursorPositionLeft which has quote', () => {
+    insertLetter('n')
+    insertLetter('i')
+    insertLetter('h')
+    insertLetter('a')
+    insertLetter('o')
+    expect(getCursorPosition()).toEqual(5)
+    moveCursorPositionLeft()
+    expect(getCursorPosition()).toEqual(4)
+    moveCursorPositionLeft()
+    expect(getCursorPosition()).toEqual(3)
+    moveCursorPositionLeft()
+    expect(getCursorPosition()).toEqual(2)
   })
 
   it('moveCursorPositionRight', () => {
@@ -144,7 +159,7 @@ describe('segment', () => {
       },
     ])
     forceUpdateCursorPosition(3)
-    expect(splitPreeditSegmentsByCursorPosition()).toEqual({ front: 'ni\'h', behind: '' })
+    expect(splitPreeditSegmentsByCursorPosition()).toEqual({ front: "ni'h", behind: '' })
     clearPreeditSegments()
     setupPreeditSegments([
       {
@@ -161,7 +176,7 @@ describe('segment', () => {
       },
     ])
     forceUpdateCursorPosition(6)
-    expect(splitPreeditSegmentsByCursorPosition()).toEqual({ front: 'wo\'wo\'wo', behind: '' })
+    expect(splitPreeditSegmentsByCursorPosition()).toEqual({ front: "wo'wo'wo", behind: '' })
   })
 
   it('replaceSegments', () => {

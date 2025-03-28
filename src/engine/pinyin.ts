@@ -3,24 +3,27 @@ import { damerauLevenshteinDistanceCorrector } from './corrector'
 
 export const pinyinSet = new Set<string>(pinyinText.split('\n'))
 
-export function appendAns(ans: string[][], compAns: string[][]) {
-  const ansLength = ans.length
-  if (ansLength === 0) {
+// [ni, hao, wo, chi, fan, le]
+type Syllable = string[]
+
+export function appendSyllables(ans: Syllable[], compAns: Syllable[]) {
+  const len = ans.length
+  if (len === 0) {
     compAns.forEach(pinyinSeq => ans.push(pinyinSeq))
     return ans
   }
-  for (let i = 0; i < ansLength; i++) {
+  for (let i = 0; i < len; i++) {
     for (let j = 0; j < compAns.length; j++) {
       ans.push([...ans[i], ...compAns[j]])
     }
   }
-  ans.splice(0, ansLength)
+  ans.splice(0, len)
   return ans
 }
 
-export function splitSyllablesExhaustive(text: string): string[][] {
-  const ans: string[][] = []
-  if (text.includes('\'')) {
+export function splitSyllablesExhaustive(text: string): Syllable[] {
+  const ans: Syllable[] = []
+  if (text.includes("'")) {
     const reg = /[^']+/g
     let res = reg.exec(text)
     let lastIndex = 0
@@ -37,7 +40,7 @@ export function splitSyllablesExhaustive(text: string): string[][] {
         })
       }
       lastIndex = index + res[0].length
-      appendAns(ans, compAns)
+      appendSyllables(ans, compAns)
       res = reg.exec(text)
     }
     if (lastIndex !== text.length) {
@@ -68,13 +71,16 @@ export function splitSyllablesExhaustive(text: string): string[][] {
   return ans
 }
 
-export function splitSyllablesByExistPinyin(text: string, callback?: (quotes: string, collector: string[], indexes: number[]) => void) {
+export function splitSyllablesByExistPinyin(
+  text: string,
+  callback?: (quotes: string, collector?: Syllable, indexes?: number[]) => void,
+): Syllable {
   const reg = /[^']+/g
   let exceed = reg.exec(text)
   let lastIndex = 0
-  const segs: string[] = []
+  const segs: Syllable = []
   const indexes: number[] = []
-  const res: string[] = []
+  const res: Syllable = []
   while (exceed) {
     const index = exceed.index
     let quotes = ''
@@ -109,60 +115,105 @@ export function splitSyllablesByExistPinyin(text: string, callback?: (quotes: st
     exceed = reg.exec(text)
   }
   if (lastIndex !== text.length) {
-    res[res.length - 1] += text.substring(lastIndex, text.length)
+    const trailingQuotes = text.substring(lastIndex, text.length)
+    if (res.length) {
+      res[res.length - 1] += trailingQuotes
+    }
+    else {
+      res.push(trailingQuotes)
+    }
+    callback?.(trailingQuotes)
   }
   return res
 }
 
+function findCorrectedPinyin(s: string) {
+  if (s.length < 3) {
+    return []
+  }
+  return damerauLevenshteinDistanceCorrector(s, pinyinSet, 2)
+}
+
 export function splitSyllablesByExistPinyinWithCorrector(text: string) {
-  const corrected: string[] = []
-  const res: string[] = []
-  splitSyllablesByExistPinyin(text, (quotes: string, collector: string[], indexes: number[]) => {
+  const corrected: Syllable = []
+  const result: Syllable = []
+  const tempCorrected: Syllable = []
+  const tempResult: Syllable = []
+  const updateCorrected = (collector: Syllable, i: number, j: number) => {
+    const s = collector.slice(j, i).join('')
+    const res = findCorrectedPinyin(s)
+    if (res.length) {
+      tempCorrected.push(res[0])
+      tempResult.push(s)
+    }
+    else {
+      const slice = collector.slice(j, i)
+      tempCorrected.push(...slice)
+      tempResult.push(...slice)
+    }
+  }
+  splitSyllablesByExistPinyin(text, (quotes: string, collector?: Syllable, indexes?: number[]) => {
+    if (!collector || !indexes) {
+      if (result.length) {
+        result[result.length - 1] += quotes
+      }
+      else {
+        result.push(quotes)
+      }
+      return
+    }
     let j = 0
     let k = 0
-    const len = corrected.length
+    let correctRes: Syllable = []
     for (let i = 0; i < collector.length; i++) {
-      if (i === indexes[k] || i === collector.length - 1) {
-        const end = i === indexes[k] ? i : i + 1
-        const pinyin = collector.slice(j, end).join('')
-        let correctRes: string[] = []
-        if (pinyin.length >= 3) {
-          correctRes = damerauLevenshteinDistanceCorrector(pinyin, pinyinSet, 2)
-        }
+      if (i === indexes[k]) {
+        const str = collector.slice(j, i + 1).join('')
+        correctRes = findCorrectedPinyin(str)
         if (correctRes.length) {
-          corrected.push(correctRes[0])
-          res.push(pinyin)
+          tempCorrected.push(correctRes[0])
+          tempResult.push(str)
+          k++
+          j = i + 1
+          continue
         }
-        else {
-          const slice = collector.slice(j, end).map(s => s)
-          corrected.push(...slice)
-          res.push(...slice)
-        }
-        if (i === indexes[k]) {
-          corrected.push(collector[i])
-          res.push(collector[i])
-        }
+        updateCorrected(collector, i, j)
+        tempCorrected.push(collector[i])
+        tempResult.push(collector[i])
         k++
         j = i + 1
       }
+      else if (i === collector.length - 1) {
+        if (tempCorrected.length) {
+          const str = tempResult[tempResult.length - 1] + collector.slice(j, i + 1).join('')
+          correctRes = findCorrectedPinyin(str)
+          if (correctRes.length) {
+            tempCorrected.splice(tempCorrected.length - 1, 1, correctRes[0])
+            tempResult.splice(tempResult.length - 1, 1, str)
+            break
+          }
+        }
+        updateCorrected(collector, i + 1, j)
+      }
     }
-    corrected[len] = quotes + corrected[len]
-    res[len] = quotes + res[len]
+    tempResult[0] = quotes + tempResult[0]
+    corrected.push(...tempCorrected)
+    result.push(...tempResult)
+    // clear temp
+    tempResult.length = 0
+    tempCorrected.length = 0
   })
-  return { result: res, corrected }
+  return { result, corrected }
 }
 
 export function split(
   text: string,
   options?: { useCorrector: boolean },
-): { result: string[], corrected?: string[] } {
+): { result: Syllable, corrected?: Syllable } {
   const validatedSyllablesList = splitSyllablesExhaustive(text)
   if (validatedSyllablesList.length > 0) {
     return { result: validatedSyllablesList.sort((a, b) => a.length - b.length)[0] }
   }
-  const useCorrector = Boolean(options?.useCorrector)
-  if (!useCorrector) {
-    return { result: splitSyllablesByExistPinyin(text) }
-  }
-  return splitSyllablesByExistPinyinWithCorrector(text)
+  return options?.useCorrector
+    ? splitSyllablesByExistPinyinWithCorrector(text)
+    : { result: splitSyllablesByExistPinyin(text) }
 }
