@@ -13,5 +13,7 @@ export default antfu({
     'no-console': 'off',
     'unicorn/prefer-dom-node-text-content': 'off',
     'vue/html-self-closing': 'off',
+    'style/quotes': ['error', 'single', { avoidEscape: true }],
+    'style/comma-dangle': ['error'],
   },
 })
