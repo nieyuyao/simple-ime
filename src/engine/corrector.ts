@@ -45,7 +45,7 @@ export function calcDamerauLevenshteinDistance(s1: string, s2: string): number {
       )
 
       if (i > 1 && j > 1 && s1[i - 2] === s2[j - 1] && s1[i - 1] === s2[j - 2]) {
-        dp[i][j] = Math.min(dp[i][j], dp[i - 2][j - 2] + 1)
+        dp[i][j] = Math.min(dp[i][j], dp[i - 2][j - 2])
       }
     }
   }

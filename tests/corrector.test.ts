@@ -13,8 +13,8 @@ it('calc damerau levenshtein distance', () => {
   expect(calcDamerauLevenshteinDistance('', 'a')).toEqual(1)
   expect(calcDamerauLevenshteinDistance('a', 'a')).toEqual(0)
   expect(calcDamerauLevenshteinDistance('b', 'a')).toEqual(1)
-  expect(calcDamerauLevenshteinDistance('ab', 'ba')).toEqual(1)
-  expect(calcDamerauLevenshteinDistance('chnog', 'chong')).toEqual(1)
+  expect(calcDamerauLevenshteinDistance('ab', 'ba')).toEqual(0)
+  expect(calcDamerauLevenshteinDistance('chnog', 'chong')).toEqual(0)
   expect(calcDamerauLevenshteinDistance('zhgno', 'zhong')).toEqual(2)
 })
 
@@ -22,6 +22,7 @@ it('damerau levenshtein distance corrector', () => {
   expect(damerauLevenshteinDistanceCorrector('', pinyinSet, 2)).toEqual([])
   expect(damerauLevenshteinDistanceCorrector('chnog', pinyinSet, 2)[0]).toEqual('chong')
   expect(damerauLevenshteinDistanceCorrector('zhoong', pinyinSet, 2)[0]).toEqual('zhong')
+  expect(damerauLevenshteinDistanceCorrector('ac', pinyinSet, 2)[0]).toEqual('ca')
 })
 
 it('calc levenshtein distance', () => {

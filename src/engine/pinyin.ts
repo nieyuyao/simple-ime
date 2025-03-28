@@ -128,7 +128,7 @@ export function splitSyllablesByExistPinyin(
 }
 
 function findCorrectedPinyin(s: string) {
-  if (s.length < 3) {
+  if (s.length < 2) {
     return []
   }
   return damerauLevenshteinDistanceCorrector(s, pinyinSet, 2)

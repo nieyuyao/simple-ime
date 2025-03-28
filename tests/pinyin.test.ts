@@ -73,21 +73,19 @@ it('split text using corrector', () => {
     result: ['chnog', "'chnog"],
     corrected: ['chong', 'chong'],
   })
-  expect(
-    split('chnag', { useCorrector: true }),
-  ).toEqual({
+  expect(split('chnag', { useCorrector: true })).toEqual({
     result: ['chnag'],
     corrected: ['chang'],
   })
-  expect(
-    split("chau'", { useCorrector: true }),
-  ).toEqual({
+  expect(split("chau'", { useCorrector: true })).toEqual({
     result: ["chau'"],
-    corrected: ['chai'],
+    corrected: ['chua'],
   })
 
-  console.log(split("c'''ac", { useCorrector: true }))
-  console.log(split("c'''ac"))
+  expect(split("c'''ac", { useCorrector: true })).toEqual({
+    result: ['c', "'''ac"],
+    corrected: ['c', 'ca'],
+  })
 
   expect(
     split('woshuashianianaianiapalapizpznbvhgjk', { useCorrector: true }).corrected!.length,
