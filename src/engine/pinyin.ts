@@ -1,10 +1,8 @@
+import type { Syllable } from '../types'
 import pinyinText from '../data/pinyin.txt?raw'
 import { damerauLevenshteinDistanceCorrector } from './corrector'
 
 export const pinyinSet = new Set<string>(pinyinText.split('\n'))
-
-// [ni, hao, wo, chi, fan, le]
-type Syllable = string[]
 
 export function appendSyllables(ans: Syllable[], compAns: Syllable[]) {
   const len = ans.length
