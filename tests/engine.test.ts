@@ -49,8 +49,6 @@ describe('test engine', () => {
     // fuzzy
     expect(backwardLookupCandidates(['z', 'g'], 1, lookUpOpts)[0].w).toEqual('这个')
     expect(backwardLookupCandidates(['c', 'j'], 1, lookUpOpts)[0].w).toEqual('参加')
-
-    console.log(requestCandidates('nih'))
   })
 
   it('requestCandidates', () => {

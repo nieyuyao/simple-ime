@@ -56,9 +56,6 @@ export function backwardLookupCandidates(segments: string[], end: number, opts: 
   let j = 0
   for (let i = end; i >= j; i--) {
     const { pinyin, text } = mergeSegments(segments, j, i, opts.corrected)
-    if (segments.length === 1 && segments[0] === 'nih') {
-      console.log(pinyin, text, opts.corrected)
-    }
     let words = getWordsFormDict(pinyin)
     if (i === j) {
       j = i + 1

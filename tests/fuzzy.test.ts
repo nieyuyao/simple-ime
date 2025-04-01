@@ -23,8 +23,6 @@ it('fuzzy matched pinyin', () => {
     ['zhong', 'guo'],
     ['zhou', 'guo'],
   ])
-
-  console.log(getFuzzyMatchedWords(['ni', 'a']))
 })
 
 it('fuzzy matched words', () => {
