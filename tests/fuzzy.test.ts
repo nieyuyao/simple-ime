@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { getFuzzyMatchedSyllable } from '../src/engine/fuzzy'
+import { getFuzzyMatchedPinyin, getFuzzyMatchedSyllable, getFuzzyMatchedWords } from '../src/engine/fuzzy'
 
 it('fuzzy completions', () => {
   expect(getFuzzyMatchedSyllable('ni')).toEqual([
@@ -16,4 +16,18 @@ it('fuzzy completions', () => {
     'zhong',
     'zhou',
   ])
+})
+
+it('fuzzy matched pinyin', () => {
+  expect(getFuzzyMatchedPinyin(['zho', 'guo'])).toEqual([
+    ['zhong', 'guo'],
+    ['zhou', 'guo'],
+  ])
+
+  console.log(getFuzzyMatchedWords(['ni', 'a']))
+})
+
+it('fuzzy matched words', () => {
+  expect(getFuzzyMatchedWords(['niiii'])).toEqual([])
+  expect(getFuzzyMatchedWords(['zhe', 'g']).map(w => w.w)).toEqual(['这个', '整个'])
 })

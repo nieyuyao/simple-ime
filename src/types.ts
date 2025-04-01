@@ -27,4 +27,4 @@ export interface DictWord {
 }
 
 // [ni, hao, wo, chi, fan, le]
-export type Syllable = string[]
+export type PinyinSyllables = string[]
