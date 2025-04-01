@@ -25,12 +25,13 @@ describe('test engine', () => {
     const lookUpOpts = { limit: 2 }
     expect(forwardLookupCandidates(['ni'], 0, lookUpOpts)[0].w).toBe('你')
     expect(forwardLookupCandidates(['zen', 'me', 'yang'], 2, lookUpOpts)[0].w).toBe('怎么样')
-    expect(forwardLookupCandidates(['ni', 'a', 'hao'], 2, lookUpOpts)[0].w).toBe('你啊hao')
-    expect(forwardLookupCandidates(['bu', 'zhi', 'dao'], 2, lookUpOpts)[0].w).toBe('不知dao')
+    expect(forwardLookupCandidates(['ni', 'a', 'hao'], 2, lookUpOpts)[0].w).toBe('年好')
+    expect(forwardLookupCandidates(['bu', 'zhi', 'dao'], 2, lookUpOpts)[0].w).toBe('不知到')
     expect(forwardLookupCandidates(["ni'", 'hao'], 1, lookUpOpts)[0].w).toBe('你好')
-    expect(forwardLookupCandidates(['niiii'], 0, lookUpOpts)[0].w).toBe('niiii')
+    expect(forwardLookupCandidates(['nii'], 0, lookUpOpts)[0].w).toBe('nii')
     expect(forwardLookupCandidates(['ni', 'ii'], 1, lookUpOpts)[0].w).toBe('你ii')
     expect(forwardLookupCandidates(['kongjianzhan'], 0, lookUpOpts)[0].w).toBe('空间站')
+    expect(forwardLookupCandidates(['ni', 'a'], 1, lookUpOpts)[0].w).toBe('年')
   })
 
   it('backwardLookupCandidates', () => {
@@ -43,8 +44,11 @@ describe('test engine', () => {
     expect(backwardLookupCandidates(['niiii'], 0, lookUpOpts)[0].w).toBe('niiii')
     expect(backwardLookupCandidates(['ni', 'ii'], 1, lookUpOpts)[0].w).toBe('你ii')
     expect(backwardLookupCandidates(['kongjianzhan'], 0, lookUpOpts)[0].w).toBe('空间站')
-    expect(backwardLookupCandidates(['i', 'i'], 0, lookUpOpts)[0].w).toBe('i')
+    expect(backwardLookupCandidates(['i', 'i'], 1, lookUpOpts)[0].w).toBe('ii')
     expect(backwardLookupCandidates(['xiao', 'ku'], 1, lookUpOpts)[0].w).toBe('😂')
+    // fuzzy
+    expect(backwardLookupCandidates(['z', 'g'], 1, lookUpOpts)[0].w).toEqual('这个')
+    expect(backwardLookupCandidates(['c', 'j'], 1, lookUpOpts)[0].w).toEqual('参加')
   })
 
   it('requestCandidates', () => {

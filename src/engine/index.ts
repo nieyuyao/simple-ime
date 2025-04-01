@@ -1,5 +1,6 @@
 import type { Candidate, DictWord } from '../types'
-import dictTxt from '../data/dict.txt?raw'
+import { getWordsFormDict } from './dict'
+import { getFuzzyMatchedWords } from './fuzzy'
 import { split } from './pinyin'
 
 enum Category {
@@ -7,31 +8,9 @@ enum Category {
   Forward = 0b0010,
 }
 
-type Dict = Record<string, string>
-
-export const dict: Dict = JSON.parse(dictTxt)
-
 interface LookUpOptions {
   limit: number
   corrected?: string[]
-}
-
-export function getWordsFormDict(pinyin: string): DictWord[] {
-  const reg = /(\D+)(\d+)/g
-  const content = dict[pinyin]
-  if (!content) {
-    return []
-  }
-  let res = reg.exec(content)
-  const list: DictWord[] = []
-  while (res && res.length >= 3) {
-    list.push({
-      w: res[1],
-      f: +res[2],
-    })
-    res = reg.exec(content)
-  }
-  return list
 }
 
 export function mergeSegments(
@@ -43,8 +22,13 @@ export function mergeSegments(
   let text = ''
   let pinyin = ''
   for (let i = start; i <= end; i++) {
-    const matched = corrected ? corrected[i].match(/[^']+/) : segments[i].match(/[^']+/)
-    pinyin += matched ? matched[0] : ''
+    if (corrected) {
+      pinyin = corrected[i]
+    }
+    else {
+      const matched = segments[i].match(/[^']+/)
+      pinyin += matched ? matched[0] : ''
+    }
     text += segments[i]
   }
   return { pinyin, text }
@@ -74,6 +58,14 @@ export function backwardLookupCandidates(segments: string[], end: number, opts: 
     const { pinyin, text } = mergeSegments(segments, j, i, opts.corrected)
     let words = getWordsFormDict(pinyin)
     if (i === j) {
+      j = i + 1
+      i = end + 1
+      if (words.length === 0) {
+        words = getFuzzyMatchedWords(segments.slice(j - 1, j).map(s => s.replace(/'/, '')))
+        if (words.length > 0) {
+          j = i + 2
+        }
+      }
       words = words.length
         ? words
         : [
@@ -88,8 +80,6 @@ export function backwardLookupCandidates(segments: string[], end: number, opts: 
           matchLength: text.length,
         }
       }))
-      j = i + 1
-      i = end + 1
     }
     else if (words.length) {
       collect = joinCandidates(collect, words.map((w) => {
@@ -112,36 +102,44 @@ export function backwardLookupCandidates(segments: string[], end: number, opts: 
 export function forwardLookupCandidates(segments: string[], end: number, opts: LookUpOptions): Candidate[] {
   let j = 0
   let collect: Candidate[] = []
+  let lastWords: DictWord[] = []
+  let lastText = ''
   for (let i = 0; i <= end; i++) {
-    const { pinyin: combinePinyin, text } = mergeSegments(segments, j, i, opts.corrected)
-    const words = getWordsFormDict(combinePinyin)
+    const { pinyin, text } = mergeSegments(segments, j, i, opts.corrected)
+    let words = getWordsFormDict(pinyin)
     if (words.length <= 0) {
-      const { pinyin: lastCombinePinyin, text: lastCombineText } = mergeSegments(segments, j, i - 1, opts.corrected)
-      let lastWords = getWordsFormDict(lastCombinePinyin)
-      if (lastWords.length <= 0) {
-        lastWords = [
-          {
-            f: 0,
-            w: lastCombinePinyin,
-          },
-        ]
-      }
-      collect = joinCandidates(collect, getWordsFormDict(lastCombinePinyin).map((w) => {
-        return {
-          ...w,
-          matchLength: lastCombineText.length,
+      if (i - j === 1) {
+        words = getFuzzyMatchedWords(segments.slice(j, i + 1).map(s => s.replace(/'/, '')))
+        if (words.length) {
+          collect = joinCandidates(collect, words.map((w) => {
+            return {
+              ...w,
+              matchLength: text.length,
+            }
+          }))
+          j = i + 1
+          continue
         }
-      }))
-      j = i
-      if (i === end) {
-        const matched = opts.corrected ? opts.corrected[i].match(/[^']+/) : segments[i].match(/[^']+/)
+      }
+      if (i === j) {
         collect = joinCandidates(collect, [
           {
             f: 0,
-            w: matched ? matched[0] : '',
-            matchLength: segments[i].length,
+            w: pinyin,
+            matchLength: pinyin.length,
           },
         ])
+        j = i + 1
+      }
+      else {
+        collect = joinCandidates(collect, lastWords.map((w) => {
+          return {
+            ...w,
+            matchLength: lastText.length,
+          }
+        }))
+        j = i
+        i--
       }
     }
     else if (i === end) {
@@ -153,6 +151,8 @@ export function forwardLookupCandidates(segments: string[], end: number, opts: L
         }
       }))
     }
+    lastWords = words
+    lastText = text
     if (collect.length > opts.limit && opts.limit !== -1) {
       collect.splice(opts.limit, collect.length - opts.limit)
     }

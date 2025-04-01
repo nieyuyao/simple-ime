@@ -23,6 +23,7 @@
     "test": "vitest",
     "compressDict": "ts-node --esm ./scripts/compress-dict.ts",
     "splitDict": "ts-node --esm ./scripts/split-dict.ts && npm run compressDict",
+    "genPackedTrie": "ts-node --esm ./scripts/gen-packed-trie.ts",
     "lint": "eslint -c ./eslint.config.mjs",
     "lint:fix": "eslint -c ./eslint.config.mjs --fix",
     "release": "bash ./release.sh"

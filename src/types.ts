@@ -25,3 +25,6 @@ export interface DictWord {
   w: string
   f: number
 }
+
+// [ni, hao, wo, chi, fan, le]
+export type PinyinSyllables = string[]

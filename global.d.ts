@@ -31,3 +31,16 @@ declare module '*.txt?raw' {
 declare interface Window {
   simpleIme: any
 }
+
+declare module 'dawg-lookup' {
+  export class Trie {
+    constructor(words: string)
+    pack(): string
+  }
+
+  export class PTrie {
+    constructor(packed: string)
+    isWord(w: string): boolean
+    completions(prefix: string): string[]
+  }
+}
