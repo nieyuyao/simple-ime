@@ -14,8 +14,12 @@ it('calc damerau levenshtein distance', () => {
   expect(calcDamerauLevenshteinDistance('a', 'a')).toEqual(0)
   expect(calcDamerauLevenshteinDistance('b', 'a')).toEqual(1)
   expect(calcDamerauLevenshteinDistance('ab', 'ba')).toEqual(0)
-  expect(calcDamerauLevenshteinDistance('chnog', 'chong')).toEqual(0)
+  expect(calcDamerauLevenshteinDistance('ano', 'aon')).toEqual(0)
   expect(calcDamerauLevenshteinDistance('zhgno', 'zhong')).toEqual(2)
+  expect(calcDamerauLevenshteinDistance('aabccc', '')).toEqual(6)
+  expect(calcDamerauLevenshteinDistance('aabccc', 'aab')).toEqual(3)
+  expect(calcDamerauLevenshteinDistance('aabccc', 'aba')).toEqual(3)
+  expect(calcDamerauLevenshteinDistance('aabcda', 'abadca')).toEqual(0)
 })
 
 it('damerau levenshtein distance corrector', () => {
