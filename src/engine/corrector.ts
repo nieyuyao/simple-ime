@@ -41,14 +41,13 @@ export function calcDamerauLevenshteinDistance(s1: string, s2: string): number {
     prevDist[i] = i
   }
   for (let j = 1; j <= maxLen; j++) {
-    if (j >= 2) {
-      pprevSave[0] = dist[0]
-      pprevSave[1] = dist[1]
-    }
+    pprevSave[0] = dist[0]
+    pprevSave[1] = dist[1]
     prevSave[0] = dist[0]
     dist[0]++
     for (let i = 1; i <= minLen; i++) {
-      if (i >= 2 && j >= 2) {
+      const shouldSavePPrev = i >= 2 && j >= 2
+      if (shouldSavePPrev) {
         pprevSave[2] = dist[i]
       }
       prevSave[1] = dist[i]
@@ -57,7 +56,7 @@ export function calcDamerauLevenshteinDistance(s1: string, s2: string): number {
         dist[i] + 1,
         s1[i - 1] === s2[j - 1] ? prevSave[0] : prevSave[0] + 1,
       )
-      if (i >= 2 && j >= 2) {
+      if (shouldSavePPrev) {
         if (s1[i - 2] === s2[j - 1] && s1[i - 1] === s2[j - 2]) {
           dist[i] = Math.min(dist[i], prevDist[i - 2])
         }

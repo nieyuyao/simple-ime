@@ -1,8 +1,7 @@
-.DS_Store
-.vscode
+temp
 dist
 node_modules
-*.o
 wasm
+.vscode
+.DS_Store
 *.tmp
-temp

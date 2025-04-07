@@ -4,19 +4,19 @@ import { damerauLevenshteinDistanceCorrector } from './corrector'
 
 export const pinyinSet = new Set<string>(pinyinText.split('\n'))
 
-export function appendSyllables(ans: PinyinSyllables[], compAns: PinyinSyllables[]) {
-  const len = ans.length
+export function appendSyllables(syllables: PinyinSyllables[], appended: PinyinSyllables[]) {
+  const len = syllables.length
   if (len === 0) {
-    compAns.forEach(pinyinSeq => ans.push(pinyinSeq))
-    return ans
+    appended.forEach(pinyinSeq => syllables.push(pinyinSeq))
+    return syllables
   }
   for (let i = 0; i < len; i++) {
-    for (let j = 0; j < compAns.length; j++) {
-      ans.push([...ans[i], ...compAns[j]])
+    for (let j = 0; j < appended.length; j++) {
+      syllables.push([...syllables[i], ...appended[j]])
     }
   }
-  ans.splice(0, len)
-  return ans
+  syllables.splice(0, len)
+  return syllables
 }
 
 export function splitSyllablesExhaustive(text: string): PinyinSyllables[] {
@@ -126,10 +126,7 @@ export function splitSyllablesByExistPinyin(
 }
 
 function findCorrectedPinyin(s: string) {
-  if (s.length < 2) {
-    return []
-  }
-  return damerauLevenshteinDistanceCorrector(s, pinyinSet, 2)
+  return s.length <= 1 ? [] : damerauLevenshteinDistanceCorrector(s, pinyinSet, 2)
 }
 
 export function splitSyllablesByExistPinyinWithCorrector(text: string) {
