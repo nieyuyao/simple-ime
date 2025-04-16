@@ -1,7 +1,7 @@
 {
   "name": "simple-ime",
   "type": "module",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "A simple browser tool to use Chinese Pinyin Input Method (IME).",
   "author": "nieyuyao <nieyuyao0826@hotmail.com>",
   "license": "MIT",
