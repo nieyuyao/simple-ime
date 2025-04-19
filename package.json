@@ -8,7 +8,12 @@
   "repository": {
     "url": "https://github.com/nieyuyao/simple-ime.git"
   },
-  "keywords": ["ime", "input method", "web ime", "pinyin"],
+  "keywords": [
+    "ime",
+    "input method",
+    "web ime",
+    "pinyin"
+  ],
   "main": "./dist/simple-ime.js",
   "module": "./dist/simple-ime.es.js",
   "unpkg": "./dist/simple-ime.umd.js",
@@ -29,7 +34,8 @@
     "release": "bash ./release.sh"
   },
   "dependencies": {
-    "dawg-lookup": "^2.2.1"
+    "dawg-lookup": "^2.2.1",
+    "lru-cache": "^11.1.0"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^3.15.0",

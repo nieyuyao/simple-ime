@@ -1,4 +1,5 @@
 import type { Candidate, DictWord } from '../types'
+import { LRUCache } from 'lru-cache'
 import { getWordsFormDict } from './dict'
 import { getFuzzyMatchedWords } from './fuzzy'
 import { split } from './pinyin'
@@ -7,6 +8,18 @@ enum Category {
   Backward = 0b0001,
   Forward = 0b0010,
 }
+
+interface Result {
+  segments: string[]
+  candidates: Candidate[]
+}
+
+const options: LRUCache.Options<any, any, any> = {
+  max: 500,
+  ttl: 1000 * 60 * 5,
+}
+
+const cache = new LRUCache<string, Result>(options)
 
 interface LookUpOptions {
   limit: number
@@ -163,10 +176,10 @@ export function forwardLookupCandidates(segments: string[], end: number, opts: L
 export function requestCandidates(
   text: string,
   category: number = Category.Backward | Category.Forward,
-): {
-    segments: string[]
-    candidates: Candidate[]
-  } {
+): Result {
+  if (cache.has(text)) {
+    return cache.get(text)!
+  }
   const { result: segments, corrected } = split(text, { useCorrector: true })
   if (corrected && corrected.length !== segments.length) {
     console.warn('length of corrected and splitted must be equal')
@@ -213,11 +226,13 @@ export function requestCandidates(
   bestResult.sort((a, b) => b.f - a.f)
   segmentedResult = segmentedResult.filter(filter)
   segmentedResult.sort((a, b) => b.f - a.f)
-  return {
+  const result = {
     segments,
     candidates: [
       ...bestResult,
       ...segmentedResult,
     ],
   }
+  cache.set(text, result)
+  return result
 }
