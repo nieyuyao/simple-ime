@@ -1,4 +1,4 @@
-import type { Candidate } from '../types'
+import type { Candidate, ImeOptions } from '../types'
 import { version } from '../../package.json'
 import { requestCandidates } from '../engine'
 import ImeCss from '../styles/index.scss?inline'
@@ -24,6 +24,10 @@ import {
   updatePreeditSegments,
 } from './preedit'
 import { handleSpecial } from './special'
+
+const defaultOptions: ImeOptions = {
+  maxPinyinLength: 16,
+}
 
 export class Ime {
   version = version
@@ -73,6 +77,8 @@ export class Ime {
   private preeditEle: HTMLElement | null
 
   private compositionEle: HTMLElement | null
+
+  private options: ImeOptions = { ...defaultOptions }
 
   private injectCSS() {
     const style = document.createElement('style')
@@ -190,7 +196,7 @@ export class Ime {
       e.preventDefault()
       if (
         (e.key === '\'' && !this.typeOn)
-        || getPreeditSegmentsPinyinLength() >= 16
+        || getPreeditSegmentsPinyinLength() >= this.options.maxPinyinLength
       ) {
         return
       }
@@ -515,7 +521,11 @@ export class Ime {
     }, 0)
   }
 
-  init() {
+  init(options?: Partial<ImeOptions>) {
+    this.options = {
+      ...defaultOptions,
+      ...options,
+    }
     this.statusHandle = createStatusBar(this.switchMethod, this.switchShape, this.switchPunct)
     if (!this.isOn) {
       this.statusHandle.hide()

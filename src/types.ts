@@ -28,3 +28,7 @@ export interface DictWord {
 
 // [ni, hao, wo, chi, fan, le]
 export type PinyinSyllables = string[]
+
+export interface ImeOptions {
+  maxPinyinLength: number
+}
