@@ -98,25 +98,31 @@ export function calcLevenshteinDistance(s1: string, s2: string): number {
   if (s2.length === 0) {
     return s1.length
   }
-  const dp: Array<Array<number>> = [[0]]
-  const len1 = s1.length
-  const len2 = s2.length
-  for (let i = 1; i <= len1; i++) {
-    dp[i] = [i]
+  if (s1.length > s2.length) {
+    return calcLevenshteinDistance(s2, s1)
   }
-  for (let i = 1; i <= len2; i++) {
-    dp[0][i] = i
+  const dist: number[] = []
+  const minLen = s1.length
+  const maxLen = s2.length
+  let prevSave = 0
+  let prev = 0
+  for (let i = 0; i <= minLen; i++) {
+    dist[i] = i
   }
-  for (let i = 1; i <= len1; i++) {
-    for (let j = 1; j <= len2; j++) {
-      dp[i][j] = Math.min(
-        dp[i - 1][j] + 1,
-        dp[i][j - 1] + 1,
-        s1[i - 1] && s1[i - 1] === s2[j - 1] ? dp[i - 1][j - 1] : dp[i - 1][j - 1] + 1,
+  for (let j = 1; j <= maxLen; j++) {
+    prev = dist[0]
+    dist[0]++
+    for (let i = 1; i <= minLen; i++) {
+      prevSave = dist[i]
+      dist[i] = Math.min(
+        dist[i - 1] + 1,
+        dist[i] + 1,
+        s1[i - 1] === s2[j - 1] ? prev : prev + 1,
       )
+      prev = prevSave
     }
   }
-  return dp[len1][len2]
+  return dist[minLen]
 }
 
 // Levenshtein Distance
