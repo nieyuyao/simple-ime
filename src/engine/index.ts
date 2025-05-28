@@ -204,9 +204,6 @@ export function requestCandidates(
       segmentedResult.push(...forwardLookupCandidates(segments, i, { limit: 2, corrected }))
     }
   }
-  if (text === 'wombuzhidao') {
-    console.log(bestResult)
-  }
   // Dict Candidates
   for (let i = 0; i < Math.min(segments.length, 6); i++) {
     const { pinyin, text } = mergeSegments(segments, 0, i, corrected)
