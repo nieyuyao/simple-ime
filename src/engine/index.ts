@@ -36,7 +36,7 @@ export function mergeSegments(
   let pinyin = ''
   for (let i = start; i <= end; i++) {
     if (corrected) {
-      pinyin = corrected[i]
+      pinyin += corrected[i]
     }
     else {
       const matched = segments[i].match(/[^']+/)
@@ -159,7 +159,6 @@ export function forwardLookupCandidates(segments: string[], end: number, opts: L
       collect = joinCandidates(collect, words.map((w) => {
         return {
           ...w,
-          text,
           matchLength: text.length,
         }
       }))
@@ -185,6 +184,7 @@ export function requestCandidates(
     console.warn('length of corrected and splitted must be equal')
     return { segments: [], candidates: [] }
   }
+
   const already = new Set<string>()
   let bestResult: Candidate[] = []
   let segmentedResult: Candidate[] = []
