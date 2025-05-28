@@ -12,7 +12,7 @@ export function deserializeDict(content: string) {
   return dict
 }
 
-export function compress(dict: Record<string, Array<DictWord>>) {
+export function compress(dict: Record<string, Array<DictWord>>): string {
   const compressedDic: Record<string, string> = {}
   Object.keys(dict).forEach((pinyin) => {
     const candidates = dict[pinyin]
@@ -24,7 +24,13 @@ export function compress(dict: Record<string, Array<DictWord>>) {
       compressedDic[pinyin] += `${candidate.w}${Math.floor(candidate.f)}`
     })
   })
-  return compressedDic
+  const compressedDictKeys = Object.keys(compressedDic)
+  const len = compressedDictKeys.length
+  return compressedDictKeys.reduce((t, pinyin, i) => {
+    const candidates = compressedDic[pinyin]
+    t += i === len - 1 ? `${pinyin} ${candidates}` : `${pinyin} ${candidates}\n`
+    return t
+  }, '')
 }
 
 function compressDict() {
@@ -42,22 +48,22 @@ function compressDict() {
       const idx = dict[pinyin].findIndex(dw => dw.f < 1000)
       if (idx === 0) {
         dict[pinyin].length === 1
-          ? dict[pinyin].push({ w: emoji, f: 1000 })
+          ? dict[pinyin].push({ w: emoji, f: 100 })
           : dict[pinyin].splice(1, 0, { w: emoji, f: dict[pinyin][0].f - 1 })
       }
       else if (idx > -1) {
-        dict[pinyin].splice(idx, 0, { w: emoji, f: 1000 })
+        dict[pinyin].splice(idx, 0, { w: emoji, f: 100 })
       }
       else {
-        dict[pinyin].push({ w: emoji, f: 1000 })
+        dict[pinyin].push({ w: emoji, f: 100 })
       }
     }
     else {
-      dict[pinyin] = [{ w: emoji, f: 1000 }]
+      dict[pinyin] = [{ w: emoji, f: 100 }]
     }
     res = reg.exec(emojiText)
   }
-  fs.writeFileSync(path.resolve(__dirname, '../../src/data/dict.txt'), JSON.stringify(compress(dict)))
+  fs.writeFileSync(path.resolve(__dirname, '../../src/data/dict.txt'), compress(dict))
 }
 
 compressDict()
