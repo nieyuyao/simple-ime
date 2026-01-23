@@ -2,7 +2,7 @@ import type { PinyinSyllables } from '../types'
 import pinyinText from '../data/pinyin.txt?raw'
 import { damerauLevenshteinDistanceCorrector } from './corrector'
 
-export const pinyinSet = new Set<string>(pinyinText.split('\n'))
+export const pinyinSet = new Set<string>(pinyinText.split(/\r?\n/))
 
 export function appendSyllables(syllables: PinyinSyllables[], appended: PinyinSyllables[]) {
   const len = syllables.length
