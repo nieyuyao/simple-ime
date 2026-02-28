@@ -20,18 +20,18 @@ export function getWordsFormDict(pinyin: string): DictWord[] {
   // 规范化输入的拼音：移除单引号，因为词库中不包含引号，然后转为小写
   const normalizedPinyin = pinyin
     .replace(/'/g, '') // 移除所有单引号
-    .toLowerCase(); // 统一转小写
-  
+    .toLowerCase() // 统一转小写
+
   // 检查规范化后的拼音是否为空
   if (!normalizedPinyin.trim()) {
-    return [];
+    return []
   }
-  
+
   const content = dict[normalizedPinyin]
   if (!content) {
     return []
   }
-  
+
   const reg = /(\D+)(\d+)/g
   const list: DictWord[] = []
   let res = reg.exec(content)
